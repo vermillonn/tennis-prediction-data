@@ -39,7 +39,8 @@ def backfill_coverage(res) -> str:
         "## 1. Verdict", "",
         f"**The gap is not filled.** The pinned archive (commit `{a['archive_commit'][:12]}`) ends with events starting "
         f"on {a['last_tournament_date']}. No result after that is available to this system: {mp['weeks']} weekly "
-        f"batches ({mp['first_missing_batch']} to {mp['last_batch_before_prospective']}) contain no results, and the "
+        f"batches ({mp['first_missing_batch']} to {mp['last_batch_before_prospective']}) contain no newly starting "
+        "events (the first of them is only the second week of Roland Garros 2026), and the "
         f"backfill accepted {gap_rows} records for that period. No authorized source was reachable "
         "(`source_feasibility.md`). The player state therefore stops at the archive end.", "",
         "## 2. Final valid coverage of the archive (verified from the validated table)", "",
@@ -244,9 +245,9 @@ def readiness_report(res) -> str:
         "priced through the new inference path with the frozen M4A annual fit of their year, then compared with the "
         "published Phase 3B predictions and Phase 2 baselines:", "",
         table(["metric", "value"], [
-            ["max |p − p_published| (M4A)", f"{rp['max_abs_error']:.2e}"],
-            ["max |p_elo − p_published| (surface Elo)", f"{rp['max_elo_abs_error']:.2e}"],
-            ["max |P(A) + P(B) − 1|", f"{rp['max_symmetry_error']:.2e}"],
+            ["max abs(p − p_published), M4A", f"{rp['max_abs_error']:.2e}"],
+            ["max abs(p_elo − p_published), surface Elo", f"{rp['max_elo_abs_error']:.2e}"],
+            ["max abs(P(A) + P(B) − 1)", f"{rp['max_symmetry_error']:.2e}"],
             ["tolerance", f"{rp['tolerance']:.0e}"], ["years covered", f"{rp['years'][0]}–{rp['years'][-1]}"],
             ["passed", rp["passed"]],
         ]),  # fmt: skip
@@ -260,7 +261,7 @@ def readiness_report(res) -> str:
         "State reconstruction over the whole archive in the same run:", "",
         table(["check", "value"], [
             ["historical targets with an Elo prediction", f"{srec['elo_rows']:,} (unmatched {srec['elo_unmatched_rows']})"],
-            ["max |Elo − published Phase 2|", f"{srec['elo_max_abs_error']:.1e}"],
+            ["max abs(Elo − published Phase 2)", f"{srec['elo_max_abs_error']:.1e}"],
             ["Phase 3A feature table identical", f"{srec['features_identical']} ({srec['feature_rows']:,} rows × "
                                                  f"{srec['feature_columns']} columns)"],
         ]),  # fmt: skip
@@ -273,6 +274,10 @@ def readiness_report(res) -> str:
               [[k, json.dumps({kk: vv for kk, vv in v.items() if kk != "status"}, default=str), v["status"]]
                for k, v in fresh["checks"].items()]),  # fmt: skip
         "",
+        "`missing_backfill_weeks` counts weekly batches after the last week with results and before the probe's batch. "
+        "`opponent_fit_age_weeks` measures the refit schedule only: the opponent model refits when due, but on the "
+        "same stale observations, so a fresh fit does not mean fresh data. `source_age_days` is null because no "
+        "provider snapshot exists.", "",
         "Thresholds (`[freshness]` in `config/prospective.toml`): " + ", ".join(
             f"{k} {v}" for k, v in cfg.freshness.__dict__.items()) + ". A `fail` blocks prospective predictions. "
         "Freshness never changes a probability: model probability and operational reliability are reported "
