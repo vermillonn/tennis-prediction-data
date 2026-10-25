@@ -166,6 +166,11 @@ GROUP BY player_id ORDER BY rating DESC LIMIT 10;
 
 - Weekly batching approximates chronology (Section 1). Ratings are staler than true replay would allow,
   and the multi-week rules are by level and draw size, not observed event lengths.
+- **Not verified: real event lengths.** The tests check the batch rules on synthetic cases: a two-week
+  event is released only after its second batch, and weekend start dates map to the following week.
+  An overlap audit found 3 player-weeks since 1995 (2012 Olympics) with one player in two non-Davis-Cup
+  events of a batch. Whether every real event fits its assumed one- or two-week span cannot be checked,
+  because the source has no match dates.
 - Simultaneous updates can overshoot for players with many matches in one batch.
 - The global model is overconfident at the extremes (test: predicted 0.85 -> observed 0.80). The surface model is
   better calibrated but has the same tendency. No recalibration is applied in Phase 2.
@@ -173,3 +178,9 @@ GROUP BY player_id ORDER BY rating DESC LIMIT 10;
   including retirements helps slightly, but that was not part of the pre-registered default.
 - The tuning grid is small and fixed in the config, and parameters are not re-estimated over time.
 - Rank and ranking-point features are deliberately not used.
+- **The 2010-2026 test period has been used.** Its results were looked at when Phase 2 was reviewed and
+  merged, so it is no longer an untouched hold-out. Any later experiment that chooses parameters, features
+  or models by looking at 2010-2026 results is tuning on it, and must not present those results as
+  out-of-sample. Phase 3 needs a new protocol: keep the Phase 2 numbers as the frozen baseline, tune only on
+  validation-period data, and keep a separate final hold-out (for example a later period or a sealed slice)
+  that is scored once.
