@@ -1,0 +1,197 @@
+{
+  "chronology": {
+    "multi_week": [
+      {
+        "levels": [
+          "G"
+        ],
+        "min_draw_size": null,
+        "weeks": 2
+      },
+      {
+        "levels": [
+          "M"
+        ],
+        "min_draw_size": 96,
+        "weeks": 2
+      },
+      {
+        "levels": [
+          "O"
+        ],
+        "min_draw_size": null,
+        "weeks": 2
+      }
+    ],
+    "week_start": "saturday"
+  },
+  "input_validated_checksums": {
+    "season=1968/part-0.parquet": "9cf2f3b6b1711a5bf6f1e3905c7e993fc6641ee42de84f1d1a70536152a4fe95",
+    "season=1969/part-0.parquet": "1e88c89321b9ac4095421ff6df53a3f55190ca6680407c6733f5846d2ca4f5c9",
+    "season=1970/part-0.parquet": "27da0e7c3da9ed0a8a0f6f33e84fb4b631284508de7d65df51f2545a843118b4",
+    "season=1971/part-0.parquet": "8fa90179a5a5741e760e0a95c1512e049eeece09c4df4afec530c36a4bda6212",
+    "season=1972/part-0.parquet": "227c242c7364e30e47e719c22b70925d148c36f9e4f3901c98455dae696e7236",
+    "season=1973/part-0.parquet": "9e051902c8c484b361b0edfab241580470bbf19c8846bb4eb480e2681e0008c5",
+    "season=1974/part-0.parquet": "61106761e8f6c9d718619ac85aa0b43853d0dbd6b4c861f2e8117b127fe755ff",
+    "season=1975/part-0.parquet": "7dce9dbbdcd9546899c5ed3df2a98588780a18925708ea1fd004e5c3fc2ee29a",
+    "season=1976/part-0.parquet": "1abfa3f829c4e011df10efa99d02acc11aecd02c25e717170cf056159ff867d1",
+    "season=1977/part-0.parquet": "12ed5b856fabdd781d6bd5b3334a152c28244dc9a730823544a2e8bdbb974a97",
+    "season=1978/part-0.parquet": "8eb62c2060231c307cca14d141e12342b09766c40713f61ab033fba809e2ce9f",
+    "season=1979/part-0.parquet": "6cfb968d0adb0284e682f40676f11c7922ab1bad4a04c2b035d22c07ff6ca7e2",
+    "season=1980/part-0.parquet": "18380ba5141755560fd816bf5a354bc0ddb1bf269336bab35624544aed8ff418",
+    "season=1981/part-0.parquet": "def0c51faefa0c09414f8133d9e7031ca0756a190cfe3ed06aaaf8199e542bea",
+    "season=1982/part-0.parquet": "4dd615ec2efda7df9820c9c48704a878ebd5eaea4eaf4f726fe449bb93a5a431",
+    "season=1983/part-0.parquet": "b2b461c51c0b63fadef958aab6ec91ed37b40d67c74bc96c80828c56c48979d0",
+    "season=1984/part-0.parquet": "3c0965c8924ef1c169dacce79eb0ea0cdaed9b9b27dfeda04e21b56fc84f4f1e",
+    "season=1985/part-0.parquet": "8272302185c5f96e98728c9e4e34706f7a8594b9460ecff6ac65f256c17146d0",
+    "season=1986/part-0.parquet": "75c0f0fa879b9210cfa479d78ec2194111f95a58e1863c8a379f1e25a6d9279a",
+    "season=1987/part-0.parquet": "18f5b5c72c07208791f72a22f396f0cf84d65a907291fea5ef67a2c6cf431019",
+    "season=1988/part-0.parquet": "5510d20cdfb6d321172a7fc9de21bffb85df716d9cf41a942530a8c74a5a0bd0",
+    "season=1989/part-0.parquet": "f283db7fb9f726399f9e0cf40677d329738c1985bec9eeb88d302d0108932d66",
+    "season=1990/part-0.parquet": "3602f01b959a9fc883ce4af558a008c868ef642ced1ffcdedaac05ec488710d7",
+    "season=1991/part-0.parquet": "4e5f33c7c5a56e95f613aa85b4142e2f7ac3686efde00a64954ae83c75c84495",
+    "season=1992/part-0.parquet": "4dc509071aec69a6ffe785376ebe4576b844eb7201395b6feb7278be8b6c6fa0",
+    "season=1993/part-0.parquet": "f17e4f4072e64beda7f494bc7d9bdc8a1baa61407d56dce73f41e39b2efc6c33",
+    "season=1994/part-0.parquet": "0e9c0e721a6e846ca4bfde0daeffd4ba6c618cdd9baef4f4f1c110e12c0764f7",
+    "season=1995/part-0.parquet": "6ee2e9ef33224d094c7a65870b120b1774fc6141f433c60ccf1285d46090382a",
+    "season=1996/part-0.parquet": "72dce5ab043986e90e6e271d5c7626bfeed7a5fd06e8c69ae4f2e887ac0f45ee",
+    "season=1997/part-0.parquet": "a2912f9dc5a21b3656ad1a7b1fde8a84a39480820ea11baa5dec1f0d6f49cde8",
+    "season=1998/part-0.parquet": "4544422ec623ef7e763c141c5db802cc904d7c0cdc408c146aacc6867bdbebc0",
+    "season=1999/part-0.parquet": "dbfe0f83101e0dbb6bac2a84fac4ee37be552f2284950bd9c5b7f9dec5a94532",
+    "season=2000/part-0.parquet": "8bdb7d072fbc90669e932625441362b379181165386926c4cbaf7a873ac9cc1f",
+    "season=2001/part-0.parquet": "955d3a78081e57e6de8557ac018481f62266e716139d5cca6ee9f957adafc01f",
+    "season=2002/part-0.parquet": "1d8199953557cbf02b39a8a0479df1ba2e94e0cae094bc720c39622bfc67aa13",
+    "season=2003/part-0.parquet": "85fbbb0587325cc59536db8a5784b10157319563060d33165395f083b05670c7",
+    "season=2004/part-0.parquet": "4eac2fd16098d3fc41f13f0cb2e500d35ab54834fbe66b7531eff4685ba2be22",
+    "season=2005/part-0.parquet": "5bc4b2f0ab0dd2796f42023b69b7f2705908cd662a589d3e554513b941fca0f9",
+    "season=2006/part-0.parquet": "68e34afaadf771660d5f002ff507e26b0b54f34a73fb4d73032a7e8254ad23ac",
+    "season=2007/part-0.parquet": "bc02b4bca847e36e080e4d3237c0c5927c6a685cf63b5f5bbd710f4fbacccefe",
+    "season=2008/part-0.parquet": "dba5802ce2aed339679dd8441e6d786840ad407c7f72d2a113239e995377ded2",
+    "season=2009/part-0.parquet": "578956ab263597a994ec343655d1b9ab8600b5202ba5f6520e9292aa22b424c8",
+    "season=2010/part-0.parquet": "510d555f3b0d195c153d78c44edeb475c1979b77f772fa366279bc96c6e3a288",
+    "season=2011/part-0.parquet": "0f43c34e705b641f933e60f51aabf137f0d24058db60fee0d436b59ed456a240",
+    "season=2012/part-0.parquet": "97bc411dd339a4f503438dc28c520086e9d21edac5dd7125b1eb58043e4059bb",
+    "season=2013/part-0.parquet": "464741f0188e8804baf637b54f719ce7136154cbad7115802cead861bb3712d9",
+    "season=2014/part-0.parquet": "53bb74f87dc54b5dedebd104ecad78385484c099907794fd4bd12f035bbd7ddf",
+    "season=2015/part-0.parquet": "f7cc138a1f292f1724096d8ba19a1aa80a8258a7c7e31222b9ce8ea68372cfbc",
+    "season=2016/part-0.parquet": "939c48a62eae7cae1500ee7a69dec495df38ac063a8cc73bc10e37a51bafce8c",
+    "season=2017/part-0.parquet": "e0c8ddd6a55e275ed0a8e2eaacaf8fd9bac7e5eba180bbf88e2b13dc50264f90",
+    "season=2018/part-0.parquet": "d5c024f86859da9e4c673a614a6099fa55114f8d1872ac455b6db83fb06c04e0",
+    "season=2019/part-0.parquet": "727193e1924a38035ec0d2528ebdc8664555dae047dd81c39d8031375496fa30",
+    "season=2020/part-0.parquet": "63955e08773975c0084a826eb8020b489563e5dfc7be331ccc9254aff0301563",
+    "season=2021/part-0.parquet": "a539d1db5ff74dc81aea7d6d6ccba50977510e76ca40e99ca0aaea4c8ea1146f",
+    "season=2022/part-0.parquet": "9b1159b48ea7f3acb229698f9f60f54b94860cada19ef9fc7b81cee6574dfb1b",
+    "season=2023/part-0.parquet": "d04318ed45d12e9dcd502aae08689b9dc2eb7b946107e31fb9bbae4789d8fb29",
+    "season=2024/part-0.parquet": "4700291b4af8ada44b624323116a72e7dcee8386aa3b293807860036f9a57891",
+    "season=2025/part-0.parquet": "2fad5835294183022fbe54b6d4ef95133be1dd220fa2002719b99e05ca51022e",
+    "season=2026/part-0.parquet": "0d37d95ce863414f83cafca528415c891097eb24d26f26aab6f865e69a5812f7"
+  },
+  "model_version": "elo-1+engine1",
+  "outputs": {
+    "predictions": {
+      "model_name=global_elo/part-0.parquet": "d29e0ea1095bdf50ab5009283eecaf16f5aee8f04fbf721c577a09997af3567c",
+      "model_name=surface_elo/part-0.parquet": "68d4c1c558123752e97123b2135f62d372058cfbf47cb9f59091df87863e86b7"
+    },
+    "rating_history.parquet": "0e183c4e44d88038bfd709899480c409769de3f4458f79ebaf9cece9941420a6",
+    "sensitivity_predictions": {
+      "model_name=global_elo_with_retirements/part-0.parquet": "18cf4ef7e0d5909f327c94271320c9417e2f91d880acaedb4d408957c6d85410",
+      "model_name=surface_elo_with_retirements/part-0.parquet": "ad80bca6381c58402b64f429be7f07f2000df1b2a8590827eb5a18c84a6fc69d"
+    }
+  },
+  "package_version": "0.1.0",
+  "periods": {
+    "test": [
+      "2010-01-01",
+      "2026-12-31"
+    ],
+    "validation": [
+      "1991-01-01",
+      "2010-01-01"
+    ]
+  },
+  "selected": {
+    "global_elo": {
+      "configuration_hash": "ea3ea840f61d987a",
+      "params": {
+        "carpet_policy": "separate",
+        "initial_rating": 1500.0,
+        "k_constant": 24.0,
+        "k_mode": "constant",
+        "k_numerator": 250.0,
+        "k_offset": 5.0,
+        "k_shape": 0.4,
+        "shrinkage_matches": 40.0,
+        "surface_init": "constant"
+      }
+    },
+    "surface_elo": {
+      "configuration_hash": "1c330d4db8801ff6",
+      "params": {
+        "carpet_policy": "separate",
+        "initial_rating": 1500.0,
+        "k_constant": 32.0,
+        "k_mode": "constant",
+        "k_numerator": 250.0,
+        "k_offset": 5.0,
+        "k_shape": 0.4,
+        "shrinkage_matches": 40.0,
+        "surface_init": "constant"
+      }
+    }
+  },
+  "source_commit": "83733587353df8a41f2fd4f516147d5aa83f5a8d",
+  "test_comparisons": {
+    "global_elo_with_retirements - global_elo": {
+      "brier_diff": -0.0004185513225272532,
+      "brier_diff_ci_high": -0.00026773240564493584,
+      "brier_diff_ci_low": -0.0005682804413039409,
+      "clusters": 645,
+      "log_loss_diff": -0.0010979597387243138,
+      "log_loss_diff_ci_high": -0.0007351728166316185,
+      "log_loss_diff_ci_low": -0.0014472829068911898,
+      "log_loss_diff_share_below_zero": 1.0,
+      "rows": 45191
+    },
+    "surface_elo - global_elo": {
+      "brier_diff": -0.0013089894964681801,
+      "brier_diff_ci_high": -0.0007925972362023223,
+      "brier_diff_ci_low": -0.001830036509119871,
+      "clusters": 645,
+      "log_loss_diff": -0.0033267882489265766,
+      "log_loss_diff_ci_high": -0.0021024610348222023,
+      "log_loss_diff_ci_low": -0.004575699732961588,
+      "log_loss_diff_share_below_zero": 1.0,
+      "rows": 45191
+    },
+    "surface_elo_with_retirements - global_elo": {
+      "brier_diff": -0.0015800758850560495,
+      "brier_diff_ci_high": -0.0010422904266725417,
+      "brier_diff_ci_low": -0.0021409593367090834,
+      "clusters": 645,
+      "log_loss_diff": -0.004016373000660613,
+      "log_loss_diff_ci_high": -0.002728492365922377,
+      "log_loss_diff_ci_low": -0.005379696142167182,
+      "log_loss_diff_share_below_zero": 1.0,
+      "rows": 45191
+    }
+  },
+  "test_ece": {
+    "global_elo": 0.021344791769665403,
+    "global_elo_with_retirements": 0.019954974052451023,
+    "surface_elo": 0.013022767997431762,
+    "surface_elo_with_retirements": 0.009543661627276
+  },
+  "validation_comparisons": {
+    "surface_elo - global_elo": {
+      "brier_diff": -0.0019981602356425802,
+      "brier_diff_ci_high": -0.0014632039084167224,
+      "brier_diff_ci_low": -0.002520060253683637,
+      "clusters": 801,
+      "log_loss_diff": -0.004747652283105896,
+      "log_loss_diff_ci_high": -0.003447797604181053,
+      "log_loss_diff_ci_low": -0.005967017817919845,
+      "log_loss_diff_share_below_zero": 1.0,
+      "rows": 63836
+    }
+  }
+}

@@ -1,0 +1,5 @@
+model,n,log_loss,brier,accuracy,mean_predicted_a,observed_a
+global_elo,45191,0.607352,0.2103,0.663384,0.500181,0.497444
+surface_elo,45191,0.604026,0.208991,0.664801,0.500387,0.497444
+global_elo_with_retirements,45191,0.606254,0.209881,0.662886,0.500057,0.497444
+surface_elo_with_retirements,45191,0.603336,0.20872,0.666737,0.500229,0.497444

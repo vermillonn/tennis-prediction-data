@@ -58,10 +58,34 @@ def _cmd_run(args, config) -> int:
     return 0
 
 
+def _cmd_elo_backtest(args, config) -> int:
+    from tennis_data.elo.backtest import backtest
+    from tennis_data.elo.config import load_elo_config
+    from tennis_data.elo.report import write_report
+
+    cfg = load_elo_config(args.elo_config)
+    result = backtest(cfg)
+    report = write_report(cfg, result)
+    overall = result["test"]["overall"]
+    for r in overall.iter_rows(named=True):
+        print(
+            f"{r['model']:<32} n={r['n']:<6} log_loss={r['log_loss']:.4f} brier={r['brier']:.4f} accuracy={r['accuracy']:.4f}"
+        )
+    print(f"predictions: {cfg.elo_dir / 'predictions'}")
+    print(f"report:      {report}")
+    return 0
+
+
+def _elo_dir_if_built():
+    from tennis_data.elo.config import DEFAULT_ELO_CONFIG, load_elo_config
+
+    return load_elo_config(DEFAULT_ELO_CONFIG).elo_dir if DEFAULT_ELO_CONFIG.exists() else None
+
+
 def _cmd_query(args, config) -> int:
     from tennis_data.storage.query import connect
 
-    con = connect(config)
+    con = connect(config, elo_dir=_elo_dir_if_built())
     rel = con.sql(args.sql)
     if rel is None:
         return 0
@@ -86,7 +110,11 @@ def main(argv: list[str] | None = None) -> int:
     sub.add_parser("report", help="write the data-quality report from the built outputs")
     sub.add_parser("docs", help="regenerate docs/data_dictionary.md from the schema")
     sub.add_parser("run", help="ingest + build + report")
-    q = sub.add_parser("query", help="run SQL against the DuckDB views (matches, quarantine, player_matches, players)")
+    eb = sub.add_parser("elo-backtest", help="tune Elo on validation, write predictions, evaluate on the test period")
+    eb.add_argument("--elo-config", help="Elo TOML config (default: config/elo.toml)")
+    q = sub.add_parser(
+        "query", help="run SQL against the DuckDB views (matches, quarantine, player_matches, players, elo_*)"
+    )
     q.add_argument("sql")
     q.add_argument("--csv", action="store_true", help="print CSV instead of a table")
     q.add_argument("--max-rows", type=int, default=40)
@@ -95,7 +123,7 @@ def main(argv: list[str] | None = None) -> int:
 
     handlers = {
         "ingest": _cmd_ingest, "verify": _cmd_verify, "build": _cmd_build, "report": _cmd_report,
-        "docs": _cmd_docs, "run": _cmd_run, "query": _cmd_query,
+        "docs": _cmd_docs, "run": _cmd_run, "query": _cmd_query, "elo-backtest": _cmd_elo_backtest,
     }  # fmt: skip
     try:
         config = load_config(args.config)
