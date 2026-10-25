@@ -76,6 +76,42 @@ def _cmd_elo_backtest(args, config) -> int:
     return 0
 
 
+def _cmd_features_build(args, config) -> int:
+    from tennis_data.features.config import load_feature_config
+    from tennis_data.features.dictionary import write_dictionary
+    from tennis_data.features.pipeline import build_features
+    from tennis_data.features.report import write_report
+
+    cfg = load_feature_config(args.features_config)
+    built = build_features(cfg)
+    report = write_report(cfg, built)
+    perf = built["performance"]
+    print(f"feature rows: {built['table'].height}  columns: {len(built['table'].columns)}")
+    print(f"configuration_hash: {cfg.configuration_hash()}")
+    print(
+        f"runtime: {perf['total_seconds']:.1f}s  peak RSS: {perf['peak_rss_mb']:.0f} MB  opponent fits: {perf['opponent_fits']}"
+    )
+    print(f"features: {cfg.features_dir / 'serve_return'}")
+    print(f"report:   {report}")
+    if args.write_docs:
+        print(f"dictionary: {write_dictionary(cfg)}")
+    return 0
+
+
+def _cmd_features_docs(args, config) -> int:
+    from tennis_data.features.config import load_feature_config
+    from tennis_data.features.dictionary import write_dictionary
+
+    print(f"feature dictionary: {write_dictionary(load_feature_config(args.features_config))}")
+    return 0
+
+
+def _features_dir_if_built():
+    from tennis_data.features.config import DEFAULT_FEATURES_CONFIG, load_feature_config
+
+    return load_feature_config(DEFAULT_FEATURES_CONFIG).features_dir if DEFAULT_FEATURES_CONFIG.exists() else None
+
+
 def _elo_dir_if_built():
     from tennis_data.elo.config import DEFAULT_ELO_CONFIG, load_elo_config
 
@@ -85,7 +121,7 @@ def _elo_dir_if_built():
 def _cmd_query(args, config) -> int:
     from tennis_data.storage.query import connect
 
-    con = connect(config, elo_dir=_elo_dir_if_built())
+    con = connect(config, elo_dir=_elo_dir_if_built(), features_dir=_features_dir_if_built())
     rel = con.sql(args.sql)
     if rel is None:
         return 0
@@ -112,8 +148,14 @@ def main(argv: list[str] | None = None) -> int:
     sub.add_parser("run", help="ingest + build + report")
     eb = sub.add_parser("elo-backtest", help="tune Elo on validation, write predictions, evaluate on the test period")
     eb.add_argument("--elo-config", help="Elo TOML config (default: config/elo.toml)")
+    fb = sub.add_parser("features-build", help="build Phase 3A serve/return features and the coverage report")
+    fb.add_argument("--features-config", help="feature TOML config (default: config/features.toml)")
+    fb.add_argument("--write-docs", action="store_true", help="also regenerate docs/feature_dictionary.md")
+    fd = sub.add_parser("features-docs", help="regenerate docs/feature_dictionary.md from the feature registry")
+    fd.add_argument("--features-config", help="feature TOML config (default: config/features.toml)")
     q = sub.add_parser(
-        "query", help="run SQL against the DuckDB views (matches, quarantine, player_matches, players, elo_*)"
+        "query",
+        help="run SQL against the DuckDB views (matches, quarantine, player_matches, players, elo_*, serve_return_features)",
     )
     q.add_argument("sql")
     q.add_argument("--csv", action="store_true", help="print CSV instead of a table")
@@ -124,6 +166,7 @@ def main(argv: list[str] | None = None) -> int:
     handlers = {
         "ingest": _cmd_ingest, "verify": _cmd_verify, "build": _cmd_build, "report": _cmd_report,
         "docs": _cmd_docs, "run": _cmd_run, "query": _cmd_query, "elo-backtest": _cmd_elo_backtest,
+        "features-build": _cmd_features_build, "features-docs": _cmd_features_docs,
     }  # fmt: skip
     try:
         config = load_config(args.config)

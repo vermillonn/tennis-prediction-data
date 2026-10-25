@@ -9,6 +9,7 @@ Views:
   elo_predictions              Phase 2 historical pre-match Elo predictions (if built)
   elo_sensitivity_predictions  retirement-sensitivity predictions (if built)
   elo_rating_history           rating state after each batch close, for the players it changed
+  serve_return_features        Phase 3A point-in-time serve/return feature table (if built)
 """
 
 from __future__ import annotations
@@ -44,7 +45,7 @@ def _player_matches_sql() -> str:
 
 
 def connect(
-    config: Config, database: str | Path = ":memory:", elo_dir: Path | None = None
+    config: Config, database: str | Path = ":memory:", elo_dir: Path | None = None, features_dir: Path | None = None
 ) -> duckdb.DuckDBPyConnection:
     validated = config.paths.validated_dir / "matches"
     if not validated.exists():
@@ -74,6 +75,11 @@ def connect(
         if (elo_dir / "rating_history.parquet").exists():
             path = _sql_path(elo_dir / "rating_history.parquet")
             con.execute(f"CREATE OR REPLACE VIEW elo_rating_history AS SELECT * FROM read_parquet('{path}')")
+    if features_dir is not None and (features_dir / "serve_return").exists():
+        glob = _sql_path(features_dir / "serve_return" / "**" / "*.parquet")
+        con.execute(
+            f"CREATE OR REPLACE VIEW serve_return_features AS SELECT * FROM read_parquet('{glob}', hive_partitioning = false)"
+        )
     return con
 
 

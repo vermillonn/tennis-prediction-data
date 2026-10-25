@@ -1,0 +1,10 @@
+measure,period,q00,q10,q25,q50,q75,q90,q100
+prior service points,test,0.0,760.0,4222.0,13073.0,28727.0,46684.0,112292.0
+prior service points,validation,0.0,355.0,2518.0,8722.0,19717.0,31898.0,67276.0
+prior service points,warmup,0.0,0.0,0.0,0.0,0.0,0.0,0.0
+prior return points,test,0.0,741.0,4144.0,12998.0,28992.0,47482.0,120243.0
+prior return points,validation,0.0,346.0,2486.0,8700.0,19909.0,32436.0,68747.0
+prior return points,warmup,0.0,0.0,0.0,0.0,0.0,0.0,0.0
+prior surface service points,test,0.0,268.0,1556.0,5312.0,13004.0,23053.0,67252.0
+prior surface service points,validation,0.0,61.0,734.0,2881.0,7415.0,13709.0,42236.0
+prior surface service points,warmup,0.0,0.0,0.0,0.0,0.0,0.0,0.0

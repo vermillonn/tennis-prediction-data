@@ -41,7 +41,7 @@ def random_frame(n_weeks: int = 30, players: int = 12, per_week: int = 5, seed: 
     return frame(rows)
 
 
-def synthetic_season_rows(years=(2017, 2018, 2019, 2020), seed: int = 7) -> dict[int, list[dict]]:
+def synthetic_season_rows(years=(2017, 2018, 2019, 2020), seed: int = 7, stats: bool = False) -> dict[int, list[dict]]:
     """Weekly one-round events among 8 players with persistent skill differences."""
     rng = random.Random(seed)
     players = [100, 200, 300, 400, 500, 600, 700, 800]
@@ -63,7 +63,7 @@ def synthetic_season_rows(years=(2017, 2018, 2019, 2020), seed: int = 7) -> dict
                 p_win = 1 / (1 + 10 ** ((skill[q] - skill[p]) / 400))
                 w, l = (p, q) if rng.random() < p_win else (q, p)
                 rows.append(
-                    match_row(j + 1, w, l, stats=False, tourney_id=f"{y}-{week:04d}", tourney_name=f"Event {week}",
+                    match_row(j + 1, w, l, stats=stats, tourney_id=f"{y}-{week:04d}", tourney_name=f"Event {week}",
                               tourney_date=start.strftime("%Y%m%d"), surface=surface, round="R32")
                 )  # fmt: skip
         by_year[y] = rows
