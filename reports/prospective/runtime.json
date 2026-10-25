@@ -1,0 +1,15 @@
+{
+  "git_commit": "edc49d8ce1deba4c63f501539200e962239bf206+dirty",
+  "peak_rss_mb": 2389.5,
+  "replay_cases": 274,
+  "replay_state_seconds": 216.0,
+  "report_written_at": "2026-10-25T22:26:02.300589+00:00",
+  "run_at": "2026-10-25T22:26:01.819411+00:00",
+  "seconds": {
+    "audit": 0.2,
+    "backfill": 3.1,
+    "freshness": 0.0,
+    "replay": 217.2,
+    "total": 222.4
+  }
+}

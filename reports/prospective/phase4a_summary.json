@@ -1,0 +1,422 @@
+{
+  "audit": {
+    "archive_commit": "83733587353df8a41f2fd4f516147d5aa83f5a8d",
+    "configured_snapshot_end": "2026-05-25",
+    "estimate_from_previous_year": {
+      "by_category": [
+        {
+          "category": "1_complete_observation",
+          "len": 1202
+        },
+        {
+          "category": "2_outcome_without_statistics",
+          "len": 105
+        },
+        {
+          "category": "4_excluded_by_eligibility",
+          "len": 63
+        }
+      ],
+      "events": 62,
+      "events_by_level": [
+        {
+          "events": 23,
+          "matches": 667,
+          "tournament_level": "A"
+        },
+        {
+          "events": 33,
+          "matches": 109,
+          "tournament_level": "D"
+        },
+        {
+          "events": 2,
+          "matches": 254,
+          "tournament_level": "G"
+        },
+        {
+          "events": 4,
+          "matches": 340,
+          "tournament_level": "M"
+        }
+      ],
+      "grand_slams": [
+        "Us Open",
+        "Wimbledon"
+      ],
+      "matches": 1370,
+      "multi_week_events": [
+        "Canada Masters",
+        "Cincinnati Masters",
+        "Shanghai Masters",
+        "Us Open",
+        "Wimbledon"
+      ],
+      "window_batches": [
+        "2025-05-31",
+        "2025-10-25"
+      ]
+    },
+    "final_weeks_events": [
+      {
+        "completeness": "complete",
+        "draw_size": 96,
+        "event_weeks": 2,
+        "expected_main_draw_matches": 95,
+        "release_batch": "2026-04-25",
+        "rounds": [
+          "F",
+          "QF",
+          "R128",
+          "R16",
+          "R32",
+          "R64",
+          "SF"
+        ],
+        "rows": 95,
+        "rows_updating_elo": 91,
+        "rows_with_usable_stats": 91,
+        "tournament_date": "2026-04-22",
+        "tournament_id": "2026-1536",
+        "tournament_level": "M",
+        "tournament_name": "Madrid Masters"
+      },
+      {
+        "completeness": "complete",
+        "draw_size": 96,
+        "event_weeks": 2,
+        "expected_main_draw_matches": 95,
+        "release_batch": "2026-05-09",
+        "rounds": [
+          "F",
+          "QF",
+          "R128",
+          "R16",
+          "R32",
+          "R64",
+          "SF"
+        ],
+        "rows": 95,
+        "rows_updating_elo": 93,
+        "rows_with_usable_stats": 93,
+        "tournament_date": "2026-05-06",
+        "tournament_id": "2026-0416",
+        "tournament_level": "M",
+        "tournament_name": "Rome Masters"
+      },
+      {
+        "completeness": "complete",
+        "draw_size": 28,
+        "event_weeks": 1,
+        "expected_main_draw_matches": 27,
+        "release_batch": "2026-05-16",
+        "rounds": [
+          "F",
+          "QF",
+          "R16",
+          "R32",
+          "SF"
+        ],
+        "rows": 27,
+        "rows_updating_elo": 27,
+        "rows_with_usable_stats": 27,
+        "tournament_date": "2026-05-17",
+        "tournament_id": "2026-0322",
+        "tournament_level": "A",
+        "tournament_name": "Geneva"
+      },
+      {
+        "completeness": "complete",
+        "draw_size": 32,
+        "event_weeks": 1,
+        "expected_main_draw_matches": 31,
+        "release_batch": "2026-05-16",
+        "rounds": [
+          "F",
+          "QF",
+          "R16",
+          "R32",
+          "SF"
+        ],
+        "rows": 31,
+        "rows_updating_elo": 31,
+        "rows_with_usable_stats": 31,
+        "tournament_date": "2026-05-17",
+        "tournament_id": "2026-0414",
+        "tournament_level": "A",
+        "tournament_name": "Hamburg"
+      },
+      {
+        "completeness": "complete",
+        "draw_size": 128,
+        "event_weeks": 2,
+        "expected_main_draw_matches": 127,
+        "release_batch": "2026-05-30",
+        "rounds": [
+          "F",
+          "QF",
+          "R128",
+          "R16",
+          "R32",
+          "R64",
+          "SF"
+        ],
+        "rows": 127,
+        "rows_updating_elo": 118,
+        "rows_with_usable_stats": 0,
+        "tournament_date": "2026-05-25",
+        "tournament_id": "2026-520",
+        "tournament_level": "G",
+        "tournament_name": "Roland Garros"
+      }
+    ],
+    "last_stats_release_batch": "2026-05-16",
+    "last_tournament_date": "2026-05-25",
+    "last_tournament_date_by_level": [
+      {
+        "tournament_date": "2026-05-17",
+        "tournament_level": "A"
+      },
+      {
+        "tournament_date": "2026-02-07",
+        "tournament_level": "D"
+      },
+      {
+        "tournament_date": "2025-12-17",
+        "tournament_level": "F"
+      },
+      {
+        "tournament_date": "2026-05-25",
+        "tournament_level": "G"
+      },
+      {
+        "tournament_date": "2026-05-06",
+        "tournament_level": "M"
+      },
+      {
+        "tournament_date": "2024-07-29",
+        "tournament_level": "O"
+      }
+    ],
+    "last_update_release_batch": "2026-05-30",
+    "missing_period": {
+      "archive_rows_in_period": 0,
+      "first_missing_batch": "2026-05-30",
+      "last_batch_before_prospective": "2026-10-24",
+      "weeks": 22
+    },
+    "snapshot_end_verified": true,
+    "year_rows": {
+      "by_category": [
+        {
+          "category": "1_complete_observation",
+          "len": 1160
+        },
+        {
+          "category": "2_outcome_without_statistics",
+          "len": 240
+        },
+        {
+          "category": "4_excluded_by_eligibility",
+          "len": 49
+        }
+      ],
+      "by_status": [
+        {
+          "len": 1400,
+          "match_status": "completed"
+        },
+        {
+          "len": 32,
+          "match_status": "retired"
+        },
+        {
+          "len": 5,
+          "match_status": "unknown"
+        },
+        {
+          "len": 12,
+          "match_status": "walkover"
+        }
+      ],
+      "in_rating_pool": 1449,
+      "multi_week_events": 6,
+      "players_not_in_master": 0,
+      "quarantine_reasons": [],
+      "quarantined": 0,
+      "stats_exclusions": [
+        {
+          "len": 240,
+          "stats_exclusion_reason": "stats_missing"
+        },
+        {
+          "len": 32,
+          "stats_exclusion_reason": "status_retired"
+        },
+        {
+          "len": 5,
+          "stats_exclusion_reason": "status_unknown"
+        },
+        {
+          "len": 12,
+          "stats_exclusion_reason": "status_walkover"
+        }
+      ],
+      "stats_status": [
+        {
+          "len": 1191,
+          "stats_status": "complete"
+        },
+        {
+          "len": 258,
+          "stats_status": "none"
+        }
+      ],
+      "time_precision": [
+        {
+          "len": 1449,
+          "time_precision": "tournament_week"
+        }
+      ],
+      "validated": 1449
+    }
+  },
+  "code_hash": "eb6705674c255cf9",
+  "frozen_hash": "bc4e5c870c6e21b9a0e085cd6b9ae2555f3e7478da4bfaa88170eb03e1a40041",
+  "prospective_configuration_hash": "b33abd57578756ac",
+  "raw_snapshot_id": "e3b0c44298fc1c14",
+  "readiness": {
+    "blockers": [
+      "historical gap not filled: 22 weekly batches (2026-05-30 to 2026-10-24) have no results; no authorized source was accessible",
+      "feature freshness fails for a match after the prospective start: last_eligible_result, last_point_statistics, missing_backfill_weeks",
+      "no verified live provider: schedules for upcoming matches cannot be ingested automatically"
+    ],
+    "components": {
+      "frozen model integrity": true,
+      "historical backfill complete to the prospective start": false,
+      "historical replay (inference path = published Phase 3B)": true,
+      "live schedule and result provider verified": false,
+      "state reconstruction (Phase 2 + 3A outputs reproduced)": true
+    },
+    "ready_for_prospective_predictions": false
+  },
+  "replay": {
+    "by_category": [
+      {
+        "category": "carpet",
+        "max_abs_error": 1.1102230246251565e-16,
+        "max_elo_abs_error": 0.0,
+        "n": 32
+      },
+      {
+        "category": "clay",
+        "max_abs_error": 1.1102230246251565e-16,
+        "max_elo_abs_error": 0.0,
+        "n": 75
+      },
+      {
+        "category": "development_period",
+        "max_abs_error": 1.1102230246251565e-16,
+        "max_elo_abs_error": 0.0,
+        "n": 137
+      },
+      {
+        "category": "established",
+        "max_abs_error": 1.1102230246251565e-16,
+        "max_elo_abs_error": 0.0,
+        "n": 116
+      },
+      {
+        "category": "exploratory_period",
+        "max_abs_error": 1.1102230246251565e-16,
+        "max_elo_abs_error": 0.0,
+        "n": 137
+      },
+      {
+        "category": "grand_slam",
+        "max_abs_error": 1.1102230246251565e-16,
+        "max_elo_abs_error": 0.0,
+        "n": 58
+      },
+      {
+        "category": "grass",
+        "max_abs_error": 1.1102230246251565e-16,
+        "max_elo_abs_error": 0.0,
+        "n": 50
+      },
+      {
+        "category": "hard",
+        "max_abs_error": 1.1102230246251565e-16,
+        "max_elo_abs_error": 0.0,
+        "n": 117
+      },
+      {
+        "category": "missing_recent_form",
+        "max_abs_error": 1.1102230246251565e-16,
+        "max_elo_abs_error": 0.0,
+        "n": 35
+      },
+      {
+        "category": "multi_week_boundary",
+        "max_abs_error": 5.551115123125783e-17,
+        "max_elo_abs_error": 0.0,
+        "n": 25
+      },
+      {
+        "category": "new_player",
+        "max_abs_error": 1.1102230246251565e-16,
+        "max_elo_abs_error": 0.0,
+        "n": 35
+      },
+      {
+        "category": "sparse_history",
+        "max_abs_error": 1.1102230246251565e-16,
+        "max_elo_abs_error": 0.0,
+        "n": 55
+      }
+    ],
+    "cases": 274,
+    "max_abs_error": 1.1102230246251565e-16,
+    "max_elo_abs_error": 0.0,
+    "max_symmetry_error": 2.220446049250313e-16,
+    "passed": true,
+    "state_reconstruction": {
+      "differing_feature_columns": [],
+      "elo_max_abs_error": 0.0,
+      "elo_rows": 193634,
+      "elo_unmatched_rows": 0,
+      "feature_columns": 142,
+      "feature_rows": 193634,
+      "features_identical": true,
+      "rows_added_by_backfill": 0
+    },
+    "tolerance": 1e-12,
+    "years": [
+      2002,
+      2003,
+      2004,
+      2005,
+      2006,
+      2007,
+      2008,
+      2009,
+      2010,
+      2011,
+      2012,
+      2013,
+      2014,
+      2015,
+      2016,
+      2017,
+      2018,
+      2019,
+      2020,
+      2021,
+      2022,
+      2023,
+      2024,
+      2025
+    ]
+  },
+  "state_snapshot_id": "3253426224f7ebc0"
+}
