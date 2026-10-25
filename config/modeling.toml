@@ -1,0 +1,128 @@
+# Phase 3B: predictive modeling on top of surface Elo (Phase 2) and serve/return features (Phase 3A).
+# Everything here is fixed BEFORE any development result is seen; the selection rule is pre-specified.
+
+features_config = "config/features.toml"   # also locates the Elo config and the Phase 1 data config
+
+[outputs]
+modeling_dir = "data/modeling"
+reports_dir = "reports/modeling"
+
+[model]
+model_version = "m3b-1"
+baseline = "surface_elo"            # Phase 2 prediction partition used as M0
+probability_epsilon = 1e-6          # clip before logit: z = log(p / (1 - p))
+
+[chronology]
+# Walk-forward with annual refits. The model for calendar year y is trained on rows whose Phase 2
+# release_batch is strictly before the first prediction batch of y (labels of a batch become known only
+# when the batch closes; multi-week events release later). Training starts with the first season with
+# serve statistics.
+train_start = "1991-01-01"
+first_prediction_year = 1994        # first year with >= 3 training years
+development_years = [2002, 2009]    # inclusive; used for ALL tuning and selection
+exploratory_years = [2010, 2026]    # inclusive; already inspected in Phase 2 -> exploratory only
+folds = [[2002, 2004], [2005, 2007], [2008, 2009]]
+
+[logistic]
+# L2-penalised logistic regression without intercept on antisymmetric (A minus B) inputs:
+#   minimise sum_i logloss_i + 1 / (2 C) * |beta|^2   (sklearn convention)
+c_grid = [0.01, 0.1, 1.0, 10.0]
+max_iterations = 100
+tolerance = 1e-10
+
+[calibration]
+# Calibrator for year y is fitted on the same model's out-of-fold predictions for years y-window..y-1.
+window_years = 3
+methods = ["raw", "temperature", "isotonic"]
+isotonic_min_rows = 5000
+
+[selection]
+# 1. For every experiment, choose C by pooled development log loss (all development years).
+# 2. Among candidate experiments choose the lowest pooled development log loss, then replace it by the
+#    simplest candidate (fewest inputs) within `simplicity_tolerance` of that log loss.
+# 3. For the selected model, choose the calibration method by pooled development log loss.
+candidates = ["M0R", "M1", "M2", "M3", "M4A", "M4B"]
+simplicity_tolerance = 0.0005
+
+[evaluation]
+calibration_bins = 10
+bootstrap_samples = 2000
+bootstrap_seed = 20261025
+# Sample-size categories by min(player A, player B) prior service points.
+sample_size_edges = [1, 1000, 5000]
+
+# Experiment registry. `inputs` name derived antisymmetric features (modeling/dataset.py DERIVED).
+[[experiments]]
+id = "M0R"
+description = "Recalibrated Elo control: Elo logit only (tests pure rescaling of Elo)"
+inputs = ["elo_logit"]
+
+[[experiments]]
+id = "M1"
+description = "Elo + overall shrunk serve/return differences"
+inputs = ["elo_logit", "spw_shrunk_diff", "rpw_shrunk_diff"]
+
+[[experiments]]
+id = "M2"
+description = "M1 + surface-specific shrunk serve/return differences"
+inputs = ["elo_logit", "spw_shrunk_diff", "rpw_shrunk_diff", "surface_spw_diff", "surface_rpw_diff"]
+
+[[experiments]]
+id = "M3"
+description = "Elo + opponent-adjusted serve/return strengths + matchup expected serve-point difference"
+inputs = ["elo_logit", "serve_adjusted_diff", "return_adjusted_diff", "matchup_spw_diff"]
+
+[[experiments]]
+id = "M4A"
+description = "M1 + recency-weighted (52-week decay) serve/return differences"
+inputs = ["elo_logit", "spw_shrunk_diff", "rpw_shrunk_diff", "spw_decay_diff", "rpw_decay_diff",
+          "decay_missing_diff"]
+
+[[experiments]]
+id = "M4B"
+description = "M1 + reliability: log effective-sample-size, history and prior-dominance differences"
+inputs = ["elo_logit", "spw_shrunk_diff", "rpw_shrunk_diff", "log_service_ess_diff", "log_stat_matches_diff",
+          "has_history_diff", "service_prior_dominated_diff"]
+
+# Ablations (reported, never selected).
+[[experiments]]
+id = "A1_SPW"
+description = "Ablation: Elo + service difference only"
+inputs = ["elo_logit", "spw_shrunk_diff"]
+
+[[experiments]]
+id = "A1_RPW"
+description = "Ablation: Elo + return difference only"
+inputs = ["elo_logit", "rpw_shrunk_diff"]
+
+[[experiments]]
+id = "A2_SURF"
+description = "Ablation: Elo + surface-specific differences only"
+inputs = ["elo_logit", "surface_spw_diff", "surface_rpw_diff"]
+
+[[experiments]]
+id = "A3_NOMATCHUP"
+description = "Ablation: M3 without the matchup feature"
+inputs = ["elo_logit", "serve_adjusted_diff", "return_adjusted_diff"]
+
+[[experiments]]
+id = "A3_MATCHUP"
+description = "Ablation: Elo + matchup expected serve-point difference only"
+inputs = ["elo_logit", "matchup_spw_diff"]
+
+[[experiments]]
+id = "A0_NOELO"
+description = "Ablation: serve/return differences without Elo (information content of features alone)"
+inputs = ["spw_shrunk_diff", "rpw_shrunk_diff"]
+
+# Post-hoc diagnostics, added after the development grid was first inspected (to locate which part of M4A/M4B
+# carries the gain). Never selection candidates; reported in the ablation report only.
+[[experiments]]
+id = "A4_DECAY"
+description = "Post-hoc diagnostic: Elo + 52-week decayed serve/return differences only (no career shrunk rates)"
+inputs = ["elo_logit", "spw_decay_diff", "rpw_decay_diff", "decay_missing_diff"]
+
+[[experiments]]
+id = "A4_ESS"
+description = "Post-hoc diagnostic: Elo + log effective-sample-size difference only (recent activity)"
+inputs = ["elo_logit", "log_service_ess_diff"]

@@ -106,6 +106,32 @@ def _cmd_features_docs(args, config) -> int:
     return 0
 
 
+def _cmd_model_backtest(args, config) -> int:
+    from tennis_data.modeling.config import load_modeling_config
+    from tennis_data.modeling.pipeline import run_modeling
+
+    cfg = load_modeling_config(args.modeling_config)
+    res = run_modeling(cfg, use_cache=not args.no_cache)
+    perf, fid = res["perf"], res["final_id"]
+    print(f"configuration_hash: {cfg.configuration_hash()}  frozen_hash: {res['frozen']['frozen_hash'][:16]}")
+    print(f"selected: {fid}  (lowest development log loss: {res['sel']['lowest']})")
+    for name, block in (("development", res["devres"]), ("exploratory", res["exres"])):
+        b = block["boot"][f"{fid} vs M0"]
+        print(f"{name}: n={b['rows']}  dLL vs surface Elo {b['log_loss_diff']:+.5f}  "
+              f"95% CI [{b['ll_ci95'][0]:+.5f}, {b['ll_ci95'][1]:+.5f}]")  # fmt: skip
+    print(
+        f"runtime: {perf['seconds']['total']:.1f}s  peak RSS: {perf['peak_rss_mb']:.0f} MB  fits: {perf['logistic_fits']}"
+    )
+    print(f"reports: {cfg.reports_dir}")
+    return 0
+
+
+def _modeling_dir_if_built():
+    from tennis_data.modeling.config import DEFAULT_MODELING_CONFIG, load_modeling_config
+
+    return load_modeling_config(DEFAULT_MODELING_CONFIG).modeling_dir if DEFAULT_MODELING_CONFIG.exists() else None
+
+
 def _features_dir_if_built():
     from tennis_data.features.config import DEFAULT_FEATURES_CONFIG, load_feature_config
 
@@ -121,7 +147,12 @@ def _elo_dir_if_built():
 def _cmd_query(args, config) -> int:
     from tennis_data.storage.query import connect
 
-    con = connect(config, elo_dir=_elo_dir_if_built(), features_dir=_features_dir_if_built())
+    con = connect(
+        config,
+        elo_dir=_elo_dir_if_built(),
+        features_dir=_features_dir_if_built(),
+        modeling_dir=_modeling_dir_if_built(),
+    )
     rel = con.sql(args.sql)
     if rel is None:
         return 0
@@ -153,9 +184,12 @@ def main(argv: list[str] | None = None) -> int:
     fb.add_argument("--write-docs", action="store_true", help="also regenerate docs/feature_dictionary.md")
     fd = sub.add_parser("features-docs", help="regenerate docs/feature_dictionary.md from the feature registry")
     fd.add_argument("--features-config", help="feature TOML config (default: config/features.toml)")
+    mb = sub.add_parser("model-backtest", help="Phase 3B: develop, select, freeze and evaluate models on top of Elo")
+    mb.add_argument("--modeling-config", help="modeling TOML config (default: config/modeling.toml)")
+    mb.add_argument("--no-cache", action="store_true", help="rebuild the joined modeling dataset")
     q = sub.add_parser(
         "query",
-        help="run SQL against the DuckDB views (matches, quarantine, player_matches, players, elo_*, serve_return_features)",
+        help="run SQL against the DuckDB views (matches, quarantine, player_matches, players, elo_*, serve_return_features, model_*)",
     )
     q.add_argument("sql")
     q.add_argument("--csv", action="store_true", help="print CSV instead of a table")
@@ -167,6 +201,7 @@ def main(argv: list[str] | None = None) -> int:
         "ingest": _cmd_ingest, "verify": _cmd_verify, "build": _cmd_build, "report": _cmd_report,
         "docs": _cmd_docs, "run": _cmd_run, "query": _cmd_query, "elo-backtest": _cmd_elo_backtest,
         "features-build": _cmd_features_build, "features-docs": _cmd_features_docs,
+        "model-backtest": _cmd_model_backtest,
     }  # fmt: skip
     try:
         config = load_config(args.config)
