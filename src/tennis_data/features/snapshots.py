@@ -43,7 +43,9 @@ class _Player:
     last_event: object = None
     surf: dict = field(default_factory=lambda: defaultdict(lambda: [0, 0, 0, 0, 0]))
     recent: list = field(default_factory=list)  # (event_date, sp_n, sp_w, rp_n, rp_w) in canonical order
-    decay: dict = field(default_factory=dict)  # half_life -> [S_n, S_w, R_n, R_w, t_ref]
+    # half_life -> [S_n, S_w, R_n, R_w, Q_sn, Q_rn, M, M2, t_ref] where S/R = sum w*x, Q = sum w^2 * points,
+    # M = sum w and M2 = sum w^2 over observations (matches); all referenced to batch t_ref.
+    decay: dict = field(default_factory=dict)
 
 
 @dataclass
@@ -146,7 +148,7 @@ class _Fits:
         i = d["index"].get(pid)
         alpha = beta = 0.0
         a_s = b_s = 0.0
-        sw = rw = 0.0
+        sw = rw = s_ess = r_ess = 0.0
         s = SURFACES.index(surface) if surface in SURFACES else None
         if i is not None:
             alpha, beta, sw, rw = (
@@ -155,6 +157,7 @@ class _Fits:
                 float(f.serve_weight[i]),
                 float(f.return_weight[i]),
             )
+            s_ess, r_ess = float(f.serve_ess[i]), float(f.return_ess[i])
             if s is not None:
                 a_s, b_s = float(f.a_surf[i, s]), float(f.b_surf[i, s])
         mu_all = f.mu_overall
@@ -167,6 +170,8 @@ class _Fits:
             "surface_return_adjusted": 1.0 - sigmoid(float(f.mu[s]) - beta - b_s) if s is not None else None,
             "adjusted_serve_points_weighted": sw,
             "adjusted_return_points_weighted": rw,
+            "adjusted_serve_ess": s_ess,
+            "adjusted_return_ess": r_ess,
             "adjusted_in_fit": (sw + rw) > 0,
             "_serve_logit": (float(f.mu[s]) if s is not None else mu_all) + alpha + a_s,
             "_return_logit": beta + b_s,
@@ -273,12 +278,17 @@ def build_snapshots(frame: pl.DataFrame, obs: pl.DataFrame, cfg: FeatureConfig) 
             tag = f"{h:g}"
             dec = st.decay.get(h)
             if dec is None:
-                sn = sw = rn = rw = 0.0
+                sn = sw = rn = rw = qs = qr = m1 = m2 = 0.0
             else:
-                f = 2.0 ** (-_days(batch, dec[4]) / 7.0 / h)
-                sn, sw, rn, rw = dec[0] * f, dec[1] * f, dec[2] * f, dec[3] * f
+                f = 2.0 ** (-_days(batch, dec[8]) / 7.0 / h)
+                sn, sw, rn, rw, m1 = dec[0] * f, dec[1] * f, dec[2] * f, dec[3] * f, dec[6] * f
+                qs, qr, m2 = dec[4] * f * f, dec[5] * f * f, dec[7] * f * f
             d[f"spw_decay{tag}w"], d[f"rpw_decay{tag}w"] = rate(sw, sn), rate(rw, rn)
             d[f"service_points_decay{tag}w"], d[f"return_points_decay{tag}w"] = sn, rn
+            # Kish effective sample sizes: (sum w x)^2 / (sum w^2 x). See docs/features.md for assumptions.
+            d[f"service_ess_decay{tag}w"] = sn * sn / qs if qs > 0 else 0.0
+            d[f"return_ess_decay{tag}w"] = rn * rn / qr if qr > 0 else 0.0
+            d[f"matches_ess_decay{tag}w"] = m1 * m1 / m2 if m2 > 0 else 0.0
         if fits is not None:
             d.update(fits.player(pool, pid, surface))
         return d
@@ -316,14 +326,19 @@ def build_snapshots(frame: pl.DataFrame, obs: pl.DataFrame, cfg: FeatureConfig) 
                 st.last_event = ev if st.last_event is None or ev > st.last_event else st.last_event
             for h in halves:
                 dec = st.decay.get(h)
-                f = 1.0 if dec is None else 2.0 ** (-_days(batch, dec[4]) / 7.0 / h)
-                base = [0.0, 0.0, 0.0, 0.0] if dec is None else [dec[0] * f, dec[1] * f, dec[2] * f, dec[3] * f]
-                terms = [[], [], [], []]
-                for ev, _, vals in items:
+                f = 1.0 if dec is None else 2.0 ** (-_days(batch, dec[8]) / 7.0 / h)
+                if dec is None:
+                    base = [0.0] * 8
+                else:
+                    # linear sums decay by f, squared-weight sums by f^2
+                    base = [dec[j] * (f * f if j in (4, 5, 7) else f) for j in range(8)]
+                terms = [[] for _ in range(8)]
+                for ev, _, (spn, spw, rpn, rpw) in items:
                     wgt = 2.0 ** (-_days(batch, ev) / 7.0 / h)
-                    for j in range(4):
-                        terms[j].append(wgt * vals[j])
-                st.decay[h] = [base[j] + math.fsum(terms[j]) for j in range(4)] + [batch]
+                    w2 = wgt * wgt
+                    for j, v in enumerate((wgt * spn, wgt * spw, wgt * rpn, wgt * rpw, w2 * spn, w2 * rpn, wgt, w2)):
+                        terms[j].append(v)
+                st.decay[h] = [base[j] + math.fsum(terms[j]) for j in range(8)] + [batch]
 
     names = [s.name for s in player_specs(cfg)]
     for batch in sorted(set(predict_at) | set(release_at)):

@@ -141,6 +141,10 @@ for both players of every Phase 2 target match. It uses only statistics released
 batch. Methodology: `docs/features.md`. Columns: `docs/feature_dictionary.md`. Coverage:
 `reports/features/coverage_report.md`. No prediction model is trained in this phase.
 
+Model matrices for later phases must be built with `tennis_data.features.model_inputs.model_matrix`. It accepts
+only allowlisted pre-match columns and rejects outcomes, current-match statistics and audit fields such as
+`stats_eligible`.
+
 ## Validation model
 
 Every check is a registered rule with a code, a severity and a category (`src/tennis_data/validation/rules.py`;

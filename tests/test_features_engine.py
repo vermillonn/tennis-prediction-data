@@ -128,3 +128,31 @@ def test_diff_features():
     r = row(run(rows), "z")
     assert r["spw_diff"] == pytest.approx(r["a_spw_shrunk"] - r["b_spw_shrunk"])
     assert r["rpw_diff"] == pytest.approx(r["a_rpw_shrunk"] - r["b_rpw_shrunk"])
+
+
+def test_effective_sample_sizes_follow_kish():
+    # Two matches at ages 104 and 52 weeks (h = 52): w = 1/4 and 1/2.
+    rows = [match("a", 0, 100, 200, a_sp=(100, 80)), match("b", 52, 100, 300, a_sp=(60, 40)), match("z", 104, 100, 400)]
+    r = row(run(rows), "z")
+    w = (0.25, 0.5)
+    n = (100, 60)
+    sum_wn = w[0] * n[0] + w[1] * n[1]
+    assert r["a_service_points_decay52w"] == pytest.approx(sum_wn)  # total weighted points (unchanged)
+    assert r["a_service_ess_decay52w"] == pytest.approx(sum_wn**2 / (w[0] ** 2 * n[0] + w[1] ** 2 * n[1]))
+    assert r["a_matches_ess_decay52w"] == pytest.approx((w[0] + w[1]) ** 2 / (w[0] ** 2 + w[1] ** 2))
+    # Kish ESS never exceeds the raw count it is derived from, and differs from the weight sum.
+    assert r["a_service_ess_decay52w"] <= 160 and r["a_matches_ess_decay52w"] <= 2
+    assert r["a_service_ess_decay52w"] != pytest.approx(sum_wn)
+
+
+def test_equal_weights_give_ess_equal_to_counts():
+    rows = [match("a", 0, 100, 200, a_sp=(70, 40)), match("b", 0, 300, 100, b_sp=(30, 20)), match("z", 5, 100, 400)]
+    r = row(run(rows), "z")
+    assert r["a_service_ess_decay52w"] == pytest.approx(100)  # both matches have the same age
+    assert r["a_matches_ess_decay52w"] == pytest.approx(2)
+    assert r["a_service_ess_decay52w"] != pytest.approx(r["a_service_points_decay52w"])  # weights < 1 here
+
+
+def test_ess_is_zero_without_history():
+    r = row(run([match("z", 0, 100, 200)]), "z")
+    assert r["a_service_ess_decay52w"] == 0.0 and r["a_matches_ess_decay52w"] == 0.0

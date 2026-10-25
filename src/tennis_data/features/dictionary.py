@@ -359,7 +359,8 @@ def player_specs(cfg: FeatureConfig) -> list[Spec]:
             Spec(
                 f"service_points_decay{t}w",
                 pl.Float64,
-                "sum(w_i * service points_i): decay-weighted sample size",
+                "sum(w_i * service points_i): total decay-weighted points. NOT an effective sample size; "
+                "see service_ess_decay",
                 "weighted points",
                 "0 when none",
                 "observations",
@@ -368,8 +369,38 @@ def player_specs(cfg: FeatureConfig) -> list[Spec]:
             Spec(
                 f"return_points_decay{t}w",
                 pl.Float64,
-                "sum(w_i * return points_i)",
+                "sum(w_i * return points_i): total decay-weighted points (not an effective sample size)",
                 "weighted points",
+                "0 when none",
+                "observations",
+                "decay",
+            ),
+            Spec(
+                f"service_ess_decay{t}w",
+                pl.Float64,
+                "Kish effective sample size of the decayed service rate: (sum w_i n_i)^2 / sum w_i^2 n_i, "
+                "n_i = service points of match i; assumes independent points (an upper bound under "
+                "within-match dependence)",
+                "effective points",
+                "0 when none",
+                "observations",
+                "decay",
+            ),
+            Spec(
+                f"return_ess_decay{t}w",
+                pl.Float64,
+                "Kish effective sample size of the decayed return rate (as service_ess_decay, return points)",
+                "effective points",
+                "0 when none",
+                "observations",
+                "decay",
+            ),
+            Spec(
+                f"matches_ess_decay{t}w",
+                pl.Float64,
+                "Kish effective number of matches: (sum w_i)^2 / sum w_i^2 (each match one unit; robust to "
+                "within-match dependence)",
+                "effective matches",
                 "0 when none",
                 "observations",
                 "decay",
@@ -436,7 +467,7 @@ def player_specs(cfg: FeatureConfig) -> list[Spec]:
             Spec(
                 "adjusted_serve_points_weighted",
                 pl.Float64,
-                "decay-weighted service points of this player in the fit",
+                "sum of decay-weighted service points of this player in the fit (not an effective sample size)",
                 "weighted points",
                 nofit,
                 "opponent model fit",
@@ -447,6 +478,24 @@ def player_specs(cfg: FeatureConfig) -> list[Spec]:
                 pl.Float64,
                 "decay-weighted return points of this player in the fit",
                 "weighted points",
+                nofit,
+                "opponent model fit",
+                "adjusted",
+            ),
+            Spec(
+                "adjusted_serve_ess",
+                pl.Float64,
+                "Kish effective service points in the fit: (sum w n)^2 / sum w^2 n (independent-points assumption)",
+                "effective points",
+                nofit,
+                "opponent model fit",
+                "adjusted",
+            ),
+            Spec(
+                "adjusted_return_ess",
+                pl.Float64,
+                "Kish effective return points in the fit",
+                "effective points",
                 nofit,
                 "opponent model fit",
                 "adjusted",
@@ -625,6 +674,28 @@ def match_specs(cfg: FeatureConfig) -> list[Spec]:
     return key + players + diffs + meta
 
 
+# Roles of the non-feature columns. Everything else in the registry is a pre-match "feature".
+#   key:     identifiers and time labels (join keys; never model inputs)
+#   context: pre-match match context, allowed as model inputs
+#   audit:   provenance / post-match metadata kept for auditing; NEVER model inputs
+#   meta:    versioning
+ROLES = {
+    "match_id": "key", "prediction_batch": "key", "tournament_date": "key", "season": "key", "pool": "key",
+    "player_a_id": "key", "player_b_id": "key",
+    "tournament_level": "context", "surface": "context",
+    "stats_eligible": "audit", "adjustment_fit_batch": "audit",
+    "feature_version": "meta", "configuration_hash": "meta",
+}  # fmt: skip
+
+
+def role_of(name: str) -> str:
+    return ROLES.get(name, "feature")
+
+
+def column_roles(cfg: FeatureConfig) -> dict[str, str]:
+    return {s.name: role_of(s.name) for s in match_specs(cfg)}
+
+
 def schema(cfg: FeatureConfig) -> dict[str, pl.DataType]:
     return {s.name: s.dtype for s in match_specs(cfg)}
 
@@ -642,15 +713,20 @@ def render_dictionary(cfg: FeatureConfig) -> str:
         "",
         "Player features are exported twice, `a_<name>` and `b_<name>` (Phase 1 winner-independent order).",
         "",
+        "**Roles.** `feature` and `context` columns are the only ones allowed in a predictive model matrix "
+        "(`tennis_data.features.model_inputs`). `key` columns are join keys and time labels. `audit` columns "
+        "describe the current match after the fact (e.g. `stats_eligible`) or provenance, and must never be "
+        "model inputs. All player features have role `feature`.",
+        "",
         "## Match-level columns",
         "",
-        "| column | type | formula | units | nulls | depends on |",
-        "|---|---|---|---|---|---|",
+        "| column | role | type | formula | units | nulls | depends on |",
+        "|---|---|---|---|---|---|---|",
     ]
     for s in match_specs(cfg):
         if s.name.startswith(("a_", "b_")) and s.group not in ("matchup",):
             continue
-        lines.append(f"| `{s.name}` | {s.dtype} | {s.formula} | {s.units} | {s.nulls} | {s.deps} |")
+        lines.append(f"| `{s.name}` | {role_of(s.name)} | {s.dtype} | {s.formula} | {s.units} | {s.nulls} | {s.deps} |")
     lines += ["", "## Player features (`a_` / `b_` prefix)", "", "| feature | group | type | formula | units | nulls | depends on |",
               "|---|---|---|---|---|---|---|"]  # fmt: skip
     for s in player_specs(cfg):

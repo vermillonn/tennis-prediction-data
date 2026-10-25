@@ -22,6 +22,21 @@ sweep the optimal shift along each direction is applied in closed form (c = -mea
 parameters), which only lowers the penalised objective. A consequence: at the optimum the active
 alpha, beta and per-surface deviations each average exactly zero.
 
+Objective (minimised): with eta the linear predictor and softplus(x) = log(1 + e^x),
+
+    F = sum_obs w * [k * softplus(-eta) + (n - k) * softplus(eta)]
+        + lam_serve/2 * sum alpha^2 + lam_return/2 * sum beta^2 + lam_surface/2 * (sum a^2 + sum b^2)
+
+(the weighted binomial negative log-likelihood without its constant, plus the ridge terms).
+``penalized_objective`` evaluates it; a test checks this optimiser against a generic one (scipy).
+
+Monotonicity: within a block every observation touches exactly one block parameter, so F is
+separable across that block's parameters. Each parameter's Newton step is halved (up to 30 times, then
+dropped) until that parameter's own contribution to F does not increase by more than a rounding
+tolerance (1e-12 relative to that contribution). Hence no block step can
+increase F, and the re-centring steps minimise exactly along flat directions, so F is non-increasing
+(up to floating-point rounding).
+
 Fitting: block coordinate Newton. Within each block (mu, alpha, beta, a, b) every observation touches
 exactly one parameter, so the block Hessian is diagonal and one exact Newton step per block is cheap
 (numpy.bincount). Steps are clipped to +-max_step. Iterate to max|step| < tolerance or max_iterations.
@@ -45,14 +60,18 @@ class OpponentFit:
     beta: np.ndarray  # (P,)
     a_surf: np.ndarray  # (P, S)
     b_surf: np.ndarray  # (P, S)
-    serve_weight: np.ndarray  # (P,) weighted points as server
-    return_weight: np.ndarray  # (P,) weighted points as returner
+    serve_weight: np.ndarray  # (P,) sum of weight * points as server (not an effective sample size)
+    return_weight: np.ndarray  # (P,) sum of weight * points as returner
+    serve_ess: np.ndarray  # (P,) Kish effective points as server: (sum w n)^2 / sum w^2 n
+    return_ess: np.ndarray  # (P,) Kish effective points as returner
     surface_weight: np.ndarray  # (S,) weighted points per surface
     iterations: int
     converged: bool
     max_step: float
     seconds: float
     n_obs: int
+    objective: float = float("nan")
+    trace: list = field(default_factory=list)  # objective after initialisation and after every sweep
     stats: dict = field(default_factory=dict)
 
     @property
@@ -64,6 +83,26 @@ class OpponentFit:
 def _expit(x: np.ndarray) -> np.ndarray:
     """Logistic function; the tanh form is overflow-free for any finite input."""
     return 0.5 * (1.0 + np.tanh(0.5 * x))
+
+
+def _kish(s1: np.ndarray, s2: np.ndarray) -> np.ndarray:
+    """(sum w n)^2 / (sum w^2 n), 0 where there is no data."""
+    return np.divide(s1 * s1, s2, out=np.zeros_like(s1), where=s2 > 0)
+
+
+def _softplus(x: np.ndarray) -> np.ndarray:
+    return np.logaddexp(0.0, x)
+
+
+def penalized_objective(eta: np.ndarray, wk: np.ndarray, wn: np.ndarray, params: tuple, lams: tuple) -> float:
+    """F = weighted binomial NLL (no constant) + ridge terms; params/lams: (alpha, beta, a, b) / (la, lb, ls)."""
+    alpha, beta, a_surf, b_surf = params
+    la, lb, ls = lams
+    nll = float((wk * _softplus(-eta) + (wn - wk) * _softplus(eta)).sum())
+    pen = 0.5 * (
+        la * float(alpha @ alpha) + lb * float(beta @ beta) + ls * (float(a_surf @ a_surf) + float(b_surf @ b_surf))
+    )
+    return nll + pen
 
 
 def fit(
@@ -83,6 +122,8 @@ def fit(
     max_step: float,
     fit_batch=None,
     init: OpponentFit | None = None,
+    record_trace: bool = False,
+    max_halvings: int = 30,
 ) -> OpponentFit:
     t0 = time.perf_counter()
     S, P = len(surfaces), n_players
@@ -152,8 +193,17 @@ def fit(
                 shifts.append(abs(c))
         return max(shifts)
 
+    def objective(eta_: np.ndarray) -> float:
+        return penalized_objective(eta_, wk, wn, (alpha, beta, a_surf, b_surf), (lam_a, lam_b, lam_s))
+
+    def contrib(eta_: np.ndarray) -> np.ndarray:
+        # k*softplus(-eta) + (n-k)*softplus(eta) == n*softplus(eta) - k*eta (one transcendental per point)
+        return wn * _softplus(eta_) - wk * eta_
+
     recentre()
     eta = mu[surface] + alpha[server] + a_surf[i_s] - beta[returner] - b_surf[j_s]
+    trace = [objective(eta)] if record_trace else []
+    cur_c = contrib(eta)
     converged, it, biggest = False, 0, float("inf")
     for it in range(1, max_iterations + 1):  # noqa: B007
         biggest = 0.0
@@ -215,13 +265,33 @@ def fit(
             hess = H + lam
             step = np.divide(grad, hess, out=np.zeros(size), where=hess > 0)
             step = np.clip(step, -max_step, max_step)
+            # Safeguard: per-parameter step halving until its own part of F does not increase.
+            base_c = cur_c
+            # Rounding tolerance: a change below 1e-12 of the parameter's own objective part is noise.
+            own = np.bincount(idx, base_c, size) + 0.5 * lam * theta**2
+            tol_own = 1e-12 * (np.abs(own) + 1.0)
+            for _ in range(max_halvings + 1):
+                cand_c = contrib(eta + sign * step[idx])
+                d_nll = np.bincount(idx, cand_c - base_c, size)
+                d_pen = 0.5 * lam * ((theta + step) ** 2 - theta**2)
+                bad = ((d_nll + d_pen) > tol_own) & (step != 0)
+                if not bad.any():
+                    break
+                step[bad] *= 0.5
+            else:
+                step[bad] = 0.0
+                cand_c = contrib(eta + sign * step[idx])
             theta += step
             eta += sign * step[idx]
+            cur_c = cand_c  # contribution at the accepted point, reused by the next block
             biggest = max(biggest, float(np.abs(step).max()) if size else 0.0)
         shift = recentre()
         if shift > 0:
             eta = mu[surface] + alpha[server] + a_surf[i_s] - beta[returner] - b_surf[j_s]
+            cur_c = contrib(eta)
         biggest = max(biggest, shift)
+        if record_trace:
+            trace.append(objective(eta))
         if biggest < tolerance:
             converged = True
             break
@@ -235,6 +305,10 @@ def fit(
         b_surf=b_surf.reshape(P, S),
         serve_weight=np.bincount(server, wn, P),
         return_weight=np.bincount(returner, wn, P),
+        serve_ess=_kish(np.bincount(server, wn, P), np.bincount(server, w * wn, P)),
+        return_ess=_kish(np.bincount(returner, wn, P), np.bincount(returner, w * wn, P)),
+        objective=objective(eta),
+        trace=trace,
         surface_weight=surf_w,
         iterations=it,
         converged=converged,

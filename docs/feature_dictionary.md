@@ -6,32 +6,34 @@ Timestamp policy for every player feature: state frozen at the start of predicti
 
 Player features are exported twice, `a_<name>` and `b_<name>` (Phase 1 winner-independent order).
 
+**Roles.** `feature` and `context` columns are the only ones allowed in a predictive model matrix (`tennis_data.features.model_inputs`). `key` columns are join keys and time labels. `audit` columns describe the current match after the fact (e.g. `stats_eligible`) or provenance, and must never be model inputs. All player features have role `feature`.
+
 ## Match-level columns
 
-| column | type | formula | units | nulls | depends on |
-|---|---|---|---|---|---|
-| `match_id` | String | Phase 1 match_id | id | never null | validated table |
-| `prediction_batch` | Date | Phase 2 batch start (Saturday) whose frozen state produced the row; a batch label, not a match time | date | never null | Phase 2 chronology |
-| `tournament_date` | Date | event start date (not the match date) | date | never null | validated table |
-| `season` | Int32 | source season | year | never null | validated table |
-| `pool` | String | Phase 2 rating pool | id | never null | Phase 2 pools |
-| `tournament_level` | String | Phase 1 tournament_level | code | never null | validated table |
-| `surface` | String | Phase 1 surface | code | null when missing in source | validated table |
-| `player_a_id` | Int64 | Phase 1 player A (winner-independent) | id | never null | validated table |
-| `player_b_id` | Int64 | Phase 1 player B | id | never null | validated table |
-| `stats_eligible` | Boolean | this match's own statistics are eligible to enter LATER snapshots (never used in its own row) | flag | never null | observations.stats_eligibility |
-| `spw_diff` | Float64 | a_spw_shrunk - b_spw_shrunk | probability difference | null if either null | shrunk |
-| `rpw_diff` | Float64 | a_rpw_shrunk - b_rpw_shrunk | probability difference | null if either null | shrunk |
-| `surface_spw_diff` | Float64 | a_surface_spw - b_surface_spw | probability difference | null if either null | surface |
-| `surface_rpw_diff` | Float64 | a_surface_rpw - b_surface_rpw | probability difference | null if either null | surface |
-| `serve_adjusted_diff` | Float64 | a_serve_adjusted - b_serve_adjusted | probability difference | null if either null | adjusted |
-| `return_adjusted_diff` | Float64 | a_return_adjusted - b_return_adjusted | probability difference | null if either null | adjusted |
-| `a_spw_vs_b` | Float64 | sigmoid(mu_s + alpha_a + a_as - beta_b - b_bs): expected SPW of A against B (overall baseline and no surface terms when surface is missing) | probability (0-1) | null before first fit | adjusted |
-| `b_spw_vs_a` | Float64 | same for B serving against A | probability (0-1) | null before first fit | adjusted |
-| `matchup_spw_diff` | Float64 | a_spw_vs_b - b_spw_vs_a | probability difference | null before first fit | adjusted |
-| `adjustment_fit_batch` | Date | batch at which the opponent model used for this row was fitted (on observations released before it) | date | null before first fit | opponent model |
-| `feature_version` | String | feature_version + engine version | id | never null | config |
-| `configuration_hash` | String | sha256 of feature settings, chronology, pools, targets, source commit | id | never null | config |
+| column | role | type | formula | units | nulls | depends on |
+|---|---|---|---|---|---|---|
+| `match_id` | key | String | Phase 1 match_id | id | never null | validated table |
+| `prediction_batch` | key | Date | Phase 2 batch start (Saturday) whose frozen state produced the row; a batch label, not a match time | date | never null | Phase 2 chronology |
+| `tournament_date` | key | Date | event start date (not the match date) | date | never null | validated table |
+| `season` | key | Int32 | source season | year | never null | validated table |
+| `pool` | key | String | Phase 2 rating pool | id | never null | Phase 2 pools |
+| `tournament_level` | context | String | Phase 1 tournament_level | code | never null | validated table |
+| `surface` | context | String | Phase 1 surface | code | null when missing in source | validated table |
+| `player_a_id` | key | Int64 | Phase 1 player A (winner-independent) | id | never null | validated table |
+| `player_b_id` | key | Int64 | Phase 1 player B | id | never null | validated table |
+| `stats_eligible` | audit | Boolean | this match's own statistics are eligible to enter LATER snapshots (never used in its own row) | flag | never null | observations.stats_eligibility |
+| `spw_diff` | feature | Float64 | a_spw_shrunk - b_spw_shrunk | probability difference | null if either null | shrunk |
+| `rpw_diff` | feature | Float64 | a_rpw_shrunk - b_rpw_shrunk | probability difference | null if either null | shrunk |
+| `surface_spw_diff` | feature | Float64 | a_surface_spw - b_surface_spw | probability difference | null if either null | surface |
+| `surface_rpw_diff` | feature | Float64 | a_surface_rpw - b_surface_rpw | probability difference | null if either null | surface |
+| `serve_adjusted_diff` | feature | Float64 | a_serve_adjusted - b_serve_adjusted | probability difference | null if either null | adjusted |
+| `return_adjusted_diff` | feature | Float64 | a_return_adjusted - b_return_adjusted | probability difference | null if either null | adjusted |
+| `a_spw_vs_b` | feature | Float64 | sigmoid(mu_s + alpha_a + a_as - beta_b - b_bs): expected SPW of A against B (overall baseline and no surface terms when surface is missing) | probability (0-1) | null before first fit | adjusted |
+| `b_spw_vs_a` | feature | Float64 | same for B serving against A | probability (0-1) | null before first fit | adjusted |
+| `matchup_spw_diff` | feature | Float64 | a_spw_vs_b - b_spw_vs_a | probability difference | null before first fit | adjusted |
+| `adjustment_fit_batch` | audit | Date | batch at which the opponent model used for this row was fitted (on observations released before it) | date | null before first fit | opponent model |
+| `feature_version` | meta | String | feature_version + engine version | id | never null | config |
+| `configuration_hash` | meta | String | sha256 of feature settings, chronology, pools, targets, source commit | id | never null | config |
 
 ## Player features (`a_` / `b_` prefix)
 
@@ -81,14 +83,19 @@ Player features are exported twice, `a_<name>` and `b_<name>` (Phase 1 winner-in
 | `return_points_last52w` | window | Int64 | return points in the window | points (count) | 0 when none | recent observations |
 | `spw_decay52w` | decay | Float64 | sum(w_i * won_i) / sum(w_i * played_i), w_i = 2^(-age_weeks/52) | probability (0-1) | null when the player has no released eligible statistics | observations, event start batches |
 | `rpw_decay52w` | decay | Float64 | same for return points | probability (0-1) | null when the player has no released eligible statistics | observations |
-| `service_points_decay52w` | decay | Float64 | sum(w_i * service points_i): decay-weighted sample size | weighted points | 0 when none | observations |
-| `return_points_decay52w` | decay | Float64 | sum(w_i * return points_i) | weighted points | 0 when none | observations |
+| `service_points_decay52w` | decay | Float64 | sum(w_i * service points_i): total decay-weighted points. NOT an effective sample size; see service_ess_decay | weighted points | 0 when none | observations |
+| `return_points_decay52w` | decay | Float64 | sum(w_i * return points_i): total decay-weighted points (not an effective sample size) | weighted points | 0 when none | observations |
+| `service_ess_decay52w` | decay | Float64 | Kish effective sample size of the decayed service rate: (sum w_i n_i)^2 / sum w_i^2 n_i, n_i = service points of match i; assumes independent points (an upper bound under within-match dependence) | effective points | 0 when none | observations |
+| `return_ess_decay52w` | decay | Float64 | Kish effective sample size of the decayed return rate (as service_ess_decay, return points) | effective points | 0 when none | observations |
+| `matches_ess_decay52w` | decay | Float64 | Kish effective number of matches: (sum w_i)^2 / sum w_i^2 (each match one unit; robust to within-match dependence) | effective matches | 0 when none | observations |
 | `serve_strength` | adjusted | Float64 | alpha_i: overall serving strength (logit scale) | logit | null until the first fit (>= 20000 released points) | opponent model fit |
 | `return_strength` | adjusted | Float64 | beta_i: overall returning strength (logit scale) | logit | null until the first fit (>= 20000 released points) | opponent model fit |
 | `serve_adjusted` | adjusted | Float64 | sigmoid(mu_overall + alpha_i): SPW vs an average returner | probability (0-1) | null until the first fit (>= 20000 released points) | opponent model fit |
 | `return_adjusted` | adjusted | Float64 | 1 - sigmoid(mu_overall - beta_i): RPW vs an average server | probability (0-1) | null until the first fit (>= 20000 released points) | opponent model fit |
 | `surface_serve_adjusted` | adjusted | Float64 | sigmoid(mu_s + alpha_i + a_is) on the match surface | probability (0-1) | null until the first fit (>= 20000 released points); null for missing surface | opponent model fit |
 | `surface_return_adjusted` | adjusted | Float64 | 1 - sigmoid(mu_s - beta_i - b_is) on the match surface | probability (0-1) | null until the first fit (>= 20000 released points); null for missing surface | opponent model fit |
-| `adjusted_serve_points_weighted` | adjusted | Float64 | decay-weighted service points of this player in the fit | weighted points | null until the first fit (>= 20000 released points) | opponent model fit |
+| `adjusted_serve_points_weighted` | adjusted | Float64 | sum of decay-weighted service points of this player in the fit (not an effective sample size) | weighted points | null until the first fit (>= 20000 released points) | opponent model fit |
 | `adjusted_return_points_weighted` | adjusted | Float64 | decay-weighted return points of this player in the fit | weighted points | null until the first fit (>= 20000 released points) | opponent model fit |
+| `adjusted_serve_ess` | adjusted | Float64 | Kish effective service points in the fit: (sum w n)^2 / sum w^2 n (independent-points assumption) | effective points | null until the first fit (>= 20000 released points) | opponent model fit |
+| `adjusted_return_ess` | adjusted | Float64 | Kish effective return points in the fit | effective points | null until the first fit (>= 20000 released points) | opponent model fit |
 | `adjusted_in_fit` | adjusted | Boolean | player has any weighted points in the fit (false: population fallback) | flag | null until the first fit (>= 20000 released points) | opponent model fit |

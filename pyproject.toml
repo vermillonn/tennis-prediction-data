@@ -22,7 +22,10 @@ build-backend = "hatchling.build"
 packages = ["src/tennis_data"]
 
 [dependency-groups]
-dev = ["pytest>=8"]
+dev = [
+    "pytest>=8",
+    "scipy>=1.17.1",
+]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
