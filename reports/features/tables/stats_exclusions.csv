@@ -1,0 +1,12 @@
+stats_exclusion_reason,matches,of_which_elo_update_eligible
+eligible,99014,99014
+stats_missing,94523,94523
+status_retired,4010,0
+status_walkover,1289,0
+status_default,161,0
+status_unknown,155,0
+stats_flag_service_games_imbalance,94,94
+status_abandoned,22,0
+status_unfinished,9,0
+stats_partial,2,2
+stats_flag_serve_points_without_service_games,1,1

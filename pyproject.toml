@@ -8,6 +8,7 @@ license = { text = "Code: MIT. Data: CC BY-NC-SA 4.0 (Jeff Sackmann), see README
 dependencies = [
     "polars>=1.20",
     "duckdb>=1.1",
+    "numpy>=1.26",
 ]
 
 [project.scripts]

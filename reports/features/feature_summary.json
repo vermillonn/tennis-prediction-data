@@ -1,0 +1,170 @@
+{
+  "columns": 132,
+  "configuration": {
+    "chronology": {
+      "multi_week": [
+        {
+          "levels": [
+            "G"
+          ],
+          "min_draw_size": null,
+          "weeks": 2
+        },
+        {
+          "levels": [
+            "M"
+          ],
+          "min_draw_size": 96,
+          "weeks": 2
+        },
+        {
+          "levels": [
+            "O"
+          ],
+          "min_draw_size": null,
+          "weeks": 2
+        }
+      ],
+      "week_start": "saturday"
+    },
+    "feature_version": "sr-1+engine1",
+    "half_life_weeks": [
+      52.0
+    ],
+    "include_retirements": false,
+    "last_matches": [
+      5,
+      20
+    ],
+    "last_weeks": [
+      13,
+      52
+    ],
+    "opponent": {
+      "enabled": true,
+      "half_life_weeks": 104.0,
+      "kappa_return": 300.0,
+      "kappa_serve": 200.0,
+      "kappa_surface": 550.0,
+      "max_iterations": 100,
+      "max_step": 1.0,
+      "min_fit_points": 20000,
+      "refit_interval_weeks": 4,
+      "tolerance": 1e-06
+    },
+    "pools": [
+      {
+        "families": [
+          "tour"
+        ],
+        "levels": [
+          "G",
+          "M",
+          "A",
+          "F",
+          "D",
+          "O"
+        ],
+        "name": "atp_tour"
+      }
+    ],
+    "shrinkage": {
+      "kappa_return": 300.0,
+      "kappa_service": 200.0,
+      "kappa_surface_return": 500.0,
+      "kappa_surface_service": 600.0,
+      "min_prior_points": 20000
+    },
+    "source_commit": "83733587353df8a41f2fd4f516147d5aa83f5a8d",
+    "target_statuses": [
+      "completed"
+    ]
+  },
+  "configuration_hash": "709e5f1efef6e053",
+  "feature_version": "sr-1+engine1",
+  "opponent": {
+    "enabled": true,
+    "half_life_weeks": 104.0,
+    "kappa_return": 300.0,
+    "kappa_serve": 200.0,
+    "kappa_surface": 550.0,
+    "max_iterations": 100,
+    "max_step": 1.0,
+    "min_fit_points": 20000,
+    "refit_interval_weeks": 4,
+    "store_fits": true,
+    "tolerance": 1e-06
+  },
+  "outputs": {
+    "match_stats_eligibility.parquet": "998016841831e1e489339b10237497fa71ac97a1bfd656677c60c1068ea56a59",
+    "opponent_fit_log.parquet": "5a881113ab32120fdd6e00c395f1bdcd8234f68bbbe8a52d4c8f6b516fcb4b6e",
+    "opponent_fit_parameters.parquet": "96b022fc1e60ae269c1b4221e4aedc752a1797d29a658c97630c5ce34e7a2def",
+    "serve_return/season=1968/part-0.parquet": "0fa5786f6cd2b0532c2d714c7521eeee644e27e43203968662829730ab6fec0a",
+    "serve_return/season=1969/part-0.parquet": "ddfab1441c5646577f0f3f5d9b7dc00597a0fd2a5688b5858ef3f1237f30a05f",
+    "serve_return/season=1970/part-0.parquet": "e225601a25350cb4c17e0569966cf9563eddee13cab531e4d313cd28d4f826d8",
+    "serve_return/season=1971/part-0.parquet": "65e8365679add91d18646ca3a55d304602259a63186e66b17b4f26d06a1eb4c4",
+    "serve_return/season=1972/part-0.parquet": "915f642d849248c9cd96e2a7f9e0bffe38510b69aaa2f32bbaf59a63633673e6",
+    "serve_return/season=1973/part-0.parquet": "2e4d831927672458f06c25997cb5fb18c7ef02474cb26c8bd0eda186c2009f39",
+    "serve_return/season=1974/part-0.parquet": "2a2b529286f56acadf7b80bb329c76288a67d2c5ea204d08e53baf3264c85ffe",
+    "serve_return/season=1975/part-0.parquet": "4804c23f1bf430a2d3c334c15038a6a7da2793877d406067a9da6b50a495e1d8",
+    "serve_return/season=1976/part-0.parquet": "42e48a24c7401237d5abc1949ae250f0514766073972a4e3528773ccf10e2d5d",
+    "serve_return/season=1977/part-0.parquet": "19c5fa9d5c3646c33873f9c037733a051fd0b6946859ed9f102eab53a9e6a630",
+    "serve_return/season=1978/part-0.parquet": "37181f1042ba2dca48cdb78ee27fa9c8d229ce23cd183f9d974f880c84a63bd5",
+    "serve_return/season=1979/part-0.parquet": "ba2b5ac9c2188a31b4f1734572e3e43da8878f7ec84fa5c07a8b654a47eed584",
+    "serve_return/season=1980/part-0.parquet": "f5e6c71f548a6fb1b040658498d6903613615b39b3bebd74e70b7ce33e19f701",
+    "serve_return/season=1981/part-0.parquet": "f6ce2bd03f0bfa681fab7871d088c4d511c5afb34db8b4a421ce7f3323ea9a66",
+    "serve_return/season=1982/part-0.parquet": "fb8f8768f639931f7d90a99041bc79f05e28c837520ab0656015472a85d3548b",
+    "serve_return/season=1983/part-0.parquet": "08c393c640230856c2080048560dbacd6ce14835a0ae384aeab89e59e701089a",
+    "serve_return/season=1984/part-0.parquet": "056ea644fa60e6fe9159b62837c9531c5ce6b8ce744f4704556d89af95bba463",
+    "serve_return/season=1985/part-0.parquet": "1af8952aab0490804ca48771dd5ed1d1a164be9989ff6127b704177314da540c",
+    "serve_return/season=1986/part-0.parquet": "01b3844ebcb55703f110527280d1b2514301319a0a206c76338e98ee42856780",
+    "serve_return/season=1987/part-0.parquet": "aee4782dc16e9aad8131cc3b008f9aebcfc58bda65558cfe0ea36bafc9e4feee",
+    "serve_return/season=1988/part-0.parquet": "0a2886ba45e9625a26cf78b5c4081772c6646dc842993a7240fb9322fc872b99",
+    "serve_return/season=1989/part-0.parquet": "e0525085ecbee6f2f0089530e7d8d341dc0a4053353a7540e614f5862864f109",
+    "serve_return/season=1990/part-0.parquet": "e89accc21096e3e9dc5119563675ecaeb2301519c0c4370a545c875e93e12d33",
+    "serve_return/season=1991/part-0.parquet": "34bafcc56a27549fa612bf972c2813b3cbabf8a01e8b87538c093827480ef1c3",
+    "serve_return/season=1992/part-0.parquet": "61c991e1a0b5391ac326aa1c49fc70415a2e8188939ac9a518cb09450fe66d58",
+    "serve_return/season=1993/part-0.parquet": "f5a3f6cf51c6415b505d14a68a1976676e69b615db5cc6236698d93217bfee28",
+    "serve_return/season=1994/part-0.parquet": "178b1476ed9d06271b917f0d761bc0b414001a62d170612f9b3dec218bde8947",
+    "serve_return/season=1995/part-0.parquet": "59fd34c0d8acf762f46d1806b76ae5b6ca54835460711d8b674781f189d92e2c",
+    "serve_return/season=1996/part-0.parquet": "1114e1b82de073744d0e17168bb7b5293df23135178219d023cdc86b21ccfe7c",
+    "serve_return/season=1997/part-0.parquet": "8a99cadcaa54119da1f63933f96f31f7cae927f9d8818c47b43385fd8c57eac0",
+    "serve_return/season=1998/part-0.parquet": "f0a93efdacb3962463d26a04a235c3ae0d5b4a77a830f78cb63861def93a438b",
+    "serve_return/season=1999/part-0.parquet": "3c7c5317686aa67a68333745ddb89d25813b19bcf16c20079317edc71ab3128a",
+    "serve_return/season=2000/part-0.parquet": "c5d72ab0d2ff3d397d7637ad97adbb27e24e8b06f15bbb8f13a0623601ca77d1",
+    "serve_return/season=2001/part-0.parquet": "4b75a68084186a5dc2bd0866215cd624f84b73a11368c10c68f2b2182de1600c",
+    "serve_return/season=2002/part-0.parquet": "16a57eba416697a8d30a8bf9883903f45269ef902fa171a10c4681134c223696",
+    "serve_return/season=2003/part-0.parquet": "d696d2b1f42f00b6f1555fd48081b20ba89da70ff249751780746f9410918805",
+    "serve_return/season=2004/part-0.parquet": "94c23cc70c4f8920bd18f31ffb4956fd13d3885473a1ffbdb1888f745e8a8c3f",
+    "serve_return/season=2005/part-0.parquet": "a454b0242489df90676f1872d278065085c04ebc7c9b4a8dac2328a0a0ad8eae",
+    "serve_return/season=2006/part-0.parquet": "95df0eb1592db1334ace66ee2e7dc4258a18a378ccc58cb754d22d824432b821",
+    "serve_return/season=2007/part-0.parquet": "b63d3568fc6efe2e98e2514a05e9fec1cf46cb23fc4601652281fe7aef2a789e",
+    "serve_return/season=2008/part-0.parquet": "9ee8167bc520f7d26c862a0a5aaf301f8bb93277395a5891bcbf8f0ba3887663",
+    "serve_return/season=2009/part-0.parquet": "37cdd1dde000b422b59698d4222ed7ff21d02d643fe2303d0f30b3a0e48dddf6",
+    "serve_return/season=2010/part-0.parquet": "f265238836d0d87a0c7a860ad36b395df4d5e9f30918b46c85da5e11d66d9ce3",
+    "serve_return/season=2011/part-0.parquet": "3f1c129921451955efc816fe1692417899bc64c08c5c16855960f61acfd6055a",
+    "serve_return/season=2012/part-0.parquet": "285b55245554d080387749561b4de880473f7e2cf9b20f5c3e6ea3f46fa5adc7",
+    "serve_return/season=2013/part-0.parquet": "8a36fb7ea60c09d1c64be00b6b25c56d3ba65851b39069ef0767d3a8102c3610",
+    "serve_return/season=2014/part-0.parquet": "0e3faccaa5f5f61de51280979eb0295e0b739f26ddd3647ae67ce0f421fc96c6",
+    "serve_return/season=2015/part-0.parquet": "17fee1cf1078dd1c5d8167b4a3d299b08078de7ce4803f204832f0d996a6def8",
+    "serve_return/season=2016/part-0.parquet": "f20fcd6bd3bf7001fc2622a4921b2bdaabaeb8638a65dae7d7809297df876364",
+    "serve_return/season=2017/part-0.parquet": "2d88f38080a301ea9d33344257941933bfc45d7e05f6fac54cea9e1dafacd3bf",
+    "serve_return/season=2018/part-0.parquet": "c9b7f170a2ab19eb850231251438667cb8034f434cfdba86dde2a9af42e33012",
+    "serve_return/season=2019/part-0.parquet": "c217b5abadd54f7b52dbc550dd757d12da1aa5f64de7066e9ca321e4ffd8d4d6",
+    "serve_return/season=2020/part-0.parquet": "bb6e67d9711315e8a436bd58beec82b64fe75a6d0906cf736b1d2893f691b1f2",
+    "serve_return/season=2021/part-0.parquet": "a7075659fb9856f7c8ebee809b739b42e089029a5d5b609863f12c1d3e4c42d7",
+    "serve_return/season=2022/part-0.parquet": "c02edc00a6ccc609343112b433a339cf4ab9ebf8cd415bc6b5655aa74a0010bd",
+    "serve_return/season=2023/part-0.parquet": "597e34bb0a7b7166968ac6598bb4f3cab36e435cda27d4ac8f40e138c5a44f47",
+    "serve_return/season=2024/part-0.parquet": "d201abd74399931392524dda13317cea282a6772ad9514e5842f948ff1d474c9",
+    "serve_return/season=2025/part-0.parquet": "0e88d3ae733058beb46de660bca9d00a29eeb3b08c88a0a857d6a9f238a141ea",
+    "serve_return/season=2026/part-0.parquet": "22b09ff1b6029d5120cb5d1b2f200b704ddd47ad8180166b5b308371d08ee984"
+  },
+  "rows": 193634,
+  "shrinkage": {
+    "kappa_return": 300.0,
+    "kappa_service": 200.0,
+    "kappa_surface_return": 500.0,
+    "kappa_surface_service": 600.0,
+    "min_prior_points": 20000
+  }
+}

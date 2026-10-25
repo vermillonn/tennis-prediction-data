@@ -1,0 +1,7 @@
+metric,matches
+validated matches (all statuses),199280
+validated matches in rating pools,199280
+Phase 2 target matches (feature rows),193634
+matches with eligible serve/return statistics (any status),99014
+target matches with eligible statistics,99014
+Elo update-eligible matches without eligible statistics (still used by Elo),94620

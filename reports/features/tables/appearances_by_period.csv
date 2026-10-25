@@ -1,0 +1,4 @@
+period,player_appearances,no_prior_statistics,service_prior_dominated,return_prior_dominated,surface_prior_dominated,pct_no_prior_statistics,pct_service_prior_dominated,pct_surface_prior_dominated
+test,90382,3130,5084,6096,13385,3.463079,5.625014,14.809365
+validation,127672,7102,10496,12166,28870,5.562692,8.221066,22.612632
+warmup,169214,169214,169214,169214,163502,100.0,100.0,96.624393

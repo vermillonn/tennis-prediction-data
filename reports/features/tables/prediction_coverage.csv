@@ -1,0 +1,4 @@
+period,feature_rows,rows_whose_own_match_has_stats,both_players_any_history,both_players_ge_200_points,both_players_ge_2000_points,exactly_one_player_history,pct_own_match_has_stats,pct_both_any_history,pct_both_ge_kappa
+test,45191,42275,42669,41144,33160,1914,93.547388,94.419243,91.044677
+validation,63836,56680,58463,55909,42269,3644,88.790024,91.583119,87.582242
+warmup,84607,59,0,0,0,0,0.069734,0.0,0.0

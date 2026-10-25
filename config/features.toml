@@ -1,0 +1,61 @@
+# Phase 3A: historical serve/return features. Relative paths resolve against the project root.
+
+# Chronology, rating pools and the target-match population come from the Phase 2 Elo config, so
+# features and Elo predictions share one interpretation of time and one set of match_ids.
+elo_config = "config/elo.toml"
+
+[outputs]
+features_dir = "data/features"       # Parquet outputs (git-ignored)
+reports_dir = "reports/features"     # coverage report, tables, summary
+
+[features]
+feature_version = "sr-1"
+# Retired matches have real point counts but were not played out. Excluded by default.
+include_retirements = false
+
+[windows]
+# Most recent N matches with eligible statistics (ordered by event start, round, match_id).
+last_matches = [5, 20]
+# Calendar windows in weekly batches (13 ~ 90 days, 52 ~ 365 days): an observation counts if its
+# event's start batch lies within the last W batches before the prediction batch.
+last_weeks = [13, 52]
+
+[decay]
+# Exponential time decay w = 2 ** (-age / half_life), age in weeks between the observation's event
+# start batch and the prediction batch. Not tuned; several values can be exported for later selection.
+half_life_weeks = [52]
+
+[shrinkage]
+# Beta-binomial shrinkage toward the chronological population prior, strength in equivalent points:
+#   p_hat = (won + kappa * prior) / (played + kappa)
+# Defaults are round values inside beta-binomial method-of-moments estimates computed on 1991-2009
+# (validation-period) player totals only: service 170-236, return 274-384, surface deviation ~570
+# (service) / ~470 (return). They were NOT tuned against any prediction metric or the 2010-2026 period.
+kappa_service = 200.0
+kappa_return = 300.0
+# Surface estimate: shrink the player's surface points toward their OFF-surface shrunk rate,
+# shifted by the population surface effect (heuristic hierarchical blend; see docs/features.md).
+kappa_surface_service = 600.0
+kappa_surface_return = 500.0
+# The population prior is used only once at least this many service points have been released
+# (before that, shrunk features are null and flagged).
+min_prior_points = 20000
+
+[opponent]
+enabled = true
+# Ridge-regularised weighted binomial model, refitted every N batches on released observations only:
+#   logit P(server i wins a point vs returner j on surface s) = mu_s + alpha_i + a_is - beta_j - b_js
+refit_interval_weeks = 4
+# Observation weights inside each fit: 2 ** (-age / half_life_weeks). Not tuned.
+half_life_weeks = 104
+# Ridge strengths in equivalent points (lambda = kappa * pbar * (1 - pbar)); with this scaling a
+# kappa gives the same prior variance on the logit scale as the beta-binomial kappa above, so the
+# same validation-period estimates are used: serve 200, return 300, surface deviations 550.
+kappa_serve = 200.0
+kappa_return = 300.0
+kappa_surface = 550.0
+max_iterations = 100
+tolerance = 1e-6
+max_step = 1.0
+min_fit_points = 20000
+store_fits = true
