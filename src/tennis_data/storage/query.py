@@ -6,6 +6,9 @@ Views:
   player_matches   long format: one row per (match, player) with opponent columns,
                    the shape needed later for rolling, leakage-free player features
   players          raw atp_players.csv (if ingested)
+  elo_predictions              Phase 2 historical pre-match Elo predictions (if built)
+  elo_sensitivity_predictions  retirement-sensitivity predictions (if built)
+  elo_rating_history           rating state after each batch close, for the players it changed
 """
 
 from __future__ import annotations
@@ -40,7 +43,9 @@ def _player_matches_sql() -> str:
     return f"{side('a', 'b')} UNION ALL {side('b', 'a')}"
 
 
-def connect(config: Config, database: str | Path = ":memory:") -> duckdb.DuckDBPyConnection:
+def connect(
+    config: Config, database: str | Path = ":memory:", elo_dir: Path | None = None
+) -> duckdb.DuckDBPyConnection:
     validated = config.paths.validated_dir / "matches"
     if not validated.exists():
         raise FileNotFoundError(f"No validated data at {validated}. Run `tennis-data build` first.")
@@ -56,6 +61,19 @@ def connect(config: Config, database: str | Path = ":memory:") -> duckdb.DuckDBP
         con.execute(
             f"CREATE OR REPLACE VIEW players AS SELECT * FROM read_csv('{_sql_path(players)}', all_varchar = true)"
         )
+    if elo_dir is not None:
+        for view, rel in (
+            ("elo_predictions", "predictions"),
+            ("elo_sensitivity_predictions", "sensitivity_predictions"),
+        ):
+            if (elo_dir / rel).exists():
+                glob = _sql_path(elo_dir / rel / "**" / "*.parquet")
+                con.execute(
+                    f"CREATE OR REPLACE VIEW {view} AS SELECT * FROM read_parquet('{glob}', hive_partitioning = false)"
+                )
+        if (elo_dir / "rating_history.parquet").exists():
+            path = _sql_path(elo_dir / "rating_history.parquet")
+            con.execute(f"CREATE OR REPLACE VIEW elo_rating_history AS SELECT * FROM read_parquet('{path}')")
     return con
 
 

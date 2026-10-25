@@ -1,0 +1,88 @@
+# Phase 2: Elo engine, chronology, eligibility, tuning grid and evaluation periods.
+# Relative paths resolve against the project root.
+
+# The Phase 1 configuration whose validated output the Elo engine reads.
+data_config = "config/default.toml"
+
+[outputs]
+elo_dir = "data/elo"            # predictions + rating history (Parquet)
+reports_dir = "reports/elo"     # evaluation report, tuning table, summary
+
+[model]
+model_version = "elo-1"
+initial_rating = 1500.0
+# Rating used for a player's first match on a surface (before shrinkage):
+#   "constant" -> initial_rating; "global" -> the player's global rating at that time.
+surface_init = "constant"
+# Carpet: "separate" (own rating pool), "hard" (rated as Hard), "none" (no surface rating;
+# carpet matches use the global rating in the surface model and do not update any surface rating).
+carpet_policy = "separate"
+# Shrinkage of the surface rating toward the global rating, by the player's prior matches on
+# that surface (n): weight = n / (n + shrinkage_matches). 0 -> pure surface rating.
+shrinkage_matches = 20.0
+
+[model.k]
+# "constant": K = constant.
+# "decay":    K(n) = numerator / (n + offset) ** shape per player (n = prior rated matches),
+#             and the match uses K = (K(n_a) + K(n_b)) / 2 so every update stays zero-sum.
+mode = "constant"
+constant = 32.0
+numerator = 250.0
+offset = 5.0
+shape = 0.4
+
+[chronology]
+# Batches are calendar weeks starting at 00:00 on this weekday and ending 24:00 six days later;
+# a batch is labelled by its start date. "saturday" maps weekend-dated events onto the ATP week
+# that follows (Sunday-start Masters, Saturday-start team events). Tournament dates are event
+# START dates; the source has no match dates. Weekly batching is an approximation.
+week_start = "saturday"
+# Events assumed to last more than one batch. Their results are applied only when the last
+# batch they span closes (conservative: never earlier than the event can have finished).
+[[chronology.multi_week]]
+levels = ["G"]
+weeks = 2
+[[chronology.multi_week]]
+levels = ["M"]
+min_draw_size = 96
+weeks = 2
+[[chronology.multi_week]]
+levels = ["O"]
+weeks = 2
+
+[eligibility]
+# Statuses whose result updates ratings / is a prediction target. Retirements are excluded
+# by default; the backtest also runs a sensitivity experiment that adds them to the updates.
+update_statuses = ["completed"]
+target_statuses = ["completed"]
+sensitivity_retirements = true
+
+# Rating pools: players are rated separately in each pool. Only matches whose family and
+# level match a pool are rated. One pool by default: the tour-level files (incl. Davis Cup).
+[[pools]]
+name = "atp_tour"
+families = ["tour"]
+levels = ["G", "M", "A", "F", "D", "O"]
+
+[evaluation]
+# Walk-forward periods by prediction batch date. Ratings run from the first season;
+# predictions before validation_start are warm-up only and never scored.
+validation_start = "1991-01-01"
+test_start = "2010-01-01"
+test_end = "2026-12-31"
+calibration_bins = 10
+bootstrap_samples = 2000
+bootstrap_seed = 20240601
+
+[tuning]
+# Grid searched on the validation period only. Each model is selected by validation log loss.
+k_constant = [16.0, 20.0, 24.0, 28.0, 32.0, 40.0, 48.0]
+k_decay = [
+    { numerator = 250.0, offset = 5.0, shape = 0.4 },
+    { numerator = 200.0, offset = 5.0, shape = 0.4 },
+    { numerator = 300.0, offset = 5.0, shape = 0.4 },
+    { numerator = 250.0, offset = 5.0, shape = 0.3 },
+    { numerator = 250.0, offset = 5.0, shape = 0.5 },
+]
+surface_init = ["constant", "global"]
+shrinkage_matches = [0.0, 5.0, 10.0, 20.0, 40.0, 80.0, 160.0, 320.0]
