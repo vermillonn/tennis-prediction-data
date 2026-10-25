@@ -1,0 +1,7 @@
+comparison,player_appearances,median_ranking_age_days,max_days_list_published_after
+equal,299584,0.0,
+both_missing,77218,,
+equals_later_list,10561,6.0,14
+missing_in_rankings_file,8200,,
+missing_in_match_file,2658,8.0,
+different,339,0.0,

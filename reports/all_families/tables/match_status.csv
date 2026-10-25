@@ -1,0 +1,12 @@
+match_status,disposition,rows
+abandoned,validated,24
+completed,quarantined,854
+completed,validated,927847
+default,validated,442
+retired,quarantined,17
+retired,validated,29388
+unfinished,validated,9
+unknown,quarantined,69
+unknown,validated,377
+walkover,quarantined,19
+walkover,validated,4169

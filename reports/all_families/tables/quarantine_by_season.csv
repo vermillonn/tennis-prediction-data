@@ -1,0 +1,57 @@
+season,source_family,rows,reasons
+1968,tour,7,placeholder_player_id
+1969,tour,39,"duplicate_record, placeholder_player_id, same_player_both_sides"
+1970,tour,18,placeholder_player_id
+1971,tour,13,"duplicate_record, placeholder_player_id"
+1972,tour,2,placeholder_player_id
+1973,tour,2,placeholder_player_id
+1974,tour,6,"placeholder_player_id, same_player_both_sides"
+1975,tour,1,placeholder_player_id
+1978,qual_chall,12,"placeholder_player_id, player_repeated_in_round"
+1979,qual_chall,12,"placeholder_player_id, player_repeated_in_round"
+1980,tour,8,placeholder_player_id
+1981,qual_chall,3,"placeholder_player_id, player_repeated_in_round"
+1991,futures,2,player_repeated_in_round
+1991,tour,2,stat_negative
+1992,futures,2,player_repeated_in_round
+1992,tour,2,"second_serve_points_exceeded, too_few_points_for_service_games"
+1993,futures,2,player_repeated_in_round
+1995,futures,4,player_repeated_in_round
+1996,futures,2,player_repeated_in_round
+1998,futures,2,player_repeated_in_round
+1999,futures,2,player_repeated_in_round
+2000,futures,2,player_repeated_in_round
+2002,futures,4,player_repeated_in_round
+2002,qual_chall,2,player_repeated_in_round
+2004,qual_chall,4,"player_repeated_in_round, same_player_both_sides"
+2005,qual_chall,2,player_repeated_in_round
+2006,tour,1,breaks_exceed_service_games
+2007,qual_chall,21,"conflicting_record, duplicate_record, placeholder_player_id, player_repeated_in_round"
+2008,qual_chall,2,player_repeated_in_round
+2008,tour,1,breaks_exceed_service_games
+2010,qual_chall,6,"conflicting_record, player_repeated_in_round"
+2011,qual_chall,16,"conflicting_record, player_repeated_in_round"
+2015,futures,4,player_repeated_in_round
+2015,qual_chall,4,player_repeated_in_round
+2016,qual_chall,28,"player_repeated_in_round, same_player_both_sides"
+2016,tour,2,too_few_points_for_service_games
+2017,tour,3,"breaks_exceed_service_games, too_few_points_for_service_games"
+2018,futures,12,player_repeated_in_round
+2018,qual_chall,109,breaks_exceed_service_games
+2019,futures,2,player_repeated_in_round
+2019,qual_chall,111,breaks_exceed_service_games
+2020,qual_chall,4,"conflicting_record, player_repeated_in_round"
+2021,futures,2,player_repeated_in_round
+2021,qual_chall,112,breaks_exceed_service_games
+2021,tour,1,breaks_exceed_service_games
+2022,futures,2,player_repeated_in_round
+2022,qual_chall,72,"breaks_exceed_service_games, second_serve_points_exceeded, too_few_points_for_service_games"
+2023,qual_chall,75,breaks_exceed_service_games
+2024,futures,2,player_repeated_in_round
+2024,qual_chall,72,"breaks_exceed_service_games, duplicate_record"
+2024,tour,4,"duplicate_record, second_serve_points_exceeded"
+2025,futures,57,too_few_points_for_service_games
+2025,qual_chall,92,"breaks_exceed_service_games, duplicate_record, player_repeated_in_round, second_serve_points_exceeded"
+2025,tour,2,"duplicate_record, second_serve_points_exceeded"
+2026,futures,10,too_few_points_for_service_games
+2026,qual_chall,1,duplicate_record

@@ -1,0 +1,10 @@
+metric,value
+distinct players (validated),29561
+player appearances (validated),1924512
+matches with a player missing from atp_players.csv,0
+matches with a player unnamed in atp_players.csv,0
+matches with a name differing from atp_players.csv,1911
+matches quarantined for identity reasons,114
+matches with both players ranked (match file),773639
+matches with exactly one player ranked,135215
+matches with neither player ranked,53402

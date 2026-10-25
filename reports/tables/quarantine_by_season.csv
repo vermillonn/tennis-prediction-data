@@ -1,0 +1,19 @@
+season,source_family,rows,reasons
+1968,tour,7,placeholder_player_id
+1969,tour,39,"duplicate_record, placeholder_player_id, same_player_both_sides"
+1970,tour,18,placeholder_player_id
+1971,tour,13,"duplicate_record, placeholder_player_id"
+1972,tour,2,placeholder_player_id
+1973,tour,2,placeholder_player_id
+1974,tour,6,"placeholder_player_id, same_player_both_sides"
+1975,tour,1,placeholder_player_id
+1980,tour,8,placeholder_player_id
+1991,tour,2,stat_negative
+1992,tour,2,"second_serve_points_exceeded, too_few_points_for_service_games"
+2006,tour,1,breaks_exceed_service_games
+2008,tour,1,breaks_exceed_service_games
+2016,tour,2,too_few_points_for_service_games
+2017,tour,3,"breaks_exceed_service_games, too_few_points_for_service_games"
+2021,tour,1,breaks_exceed_service_games
+2024,tour,4,"duplicate_record, second_serve_points_exceeded"
+2025,tour,2,"duplicate_record, second_serve_points_exceeded"

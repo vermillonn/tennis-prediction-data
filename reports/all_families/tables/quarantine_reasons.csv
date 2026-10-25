@@ -1,0 +1,10 @@
+reason,rows
+breaks_exceed_service_games,620
+player_repeated_in_round,134
+placeholder_player_id,110
+too_few_points_for_service_games,73
+conflicting_record,18
+duplicate_record,16
+same_player_both_sides,7
+second_serve_points_exceeded,7
+stat_negative,2

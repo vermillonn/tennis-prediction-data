@@ -1,0 +1,8 @@
+reason,rows
+placeholder_player_id,90
+duplicate_record,5
+second_serve_points_exceeded,5
+too_few_points_for_service_games,5
+breaks_exceed_service_games,4
+same_player_both_sides,3
+stat_negative,2

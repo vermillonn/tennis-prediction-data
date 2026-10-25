@@ -1,0 +1,169 @@
+reason,match_id,duplicate_of,tournament_id,tournament_name,season,round,winner_id,player_a_id,player_b_id,score,source_file,source_row_number
+conflicting_record,qual_chall:2007-3666:2,,2007-3666,Kuala Lumpur CH,2007,R32,103921,104583,103921,6-3 3-6 6-3,atp/atp_matches_qual_chall_2007.csv,3461
+conflicting_record,qual_chall:2007-3666:14,,2007-3666,Kuala Lumpur CH,2007,R32,104583,103921,104583,7-6(6) 3-6 7-5,atp/atp_matches_qual_chall_2007.csv,3473
+conflicting_record,qual_chall:2007-3668:2,,2007-3668,Burnie2 CH,2007,R32,110685,110685,103977,6-1 6-2,atp/atp_matches_qual_chall_2007.csv,3523
+conflicting_record,qual_chall:2007-3668:14,,2007-3668,Burnie2 CH,2007,R32,103977,110685,103977,6-1 3-6 6-3,atp/atp_matches_qual_chall_2007.csv,3535
+conflicting_record,qual_chall:2007-505:4,,2007-505,Vina del Mar,2007,Q1,103675,104209,103675,6-2 6-7(5) 6-1,atp/atp_matches_qual_chall_2007.csv,4663
+conflicting_record,qual_chall:2007-505:261,,2007-505,Vina del Mar,2007,Q1,103675,103675,104209,6-2 6-7(5) 6-1,atp/atp_matches_qual_chall_2007.csv,7095
+conflicting_record,qual_chall:2010-468:726,,2010-468,Estoril,2010,Q3,103252,104665,103252,6-3 6-4,atp/atp_matches_qual_chall_2010.csv,3368
+conflicting_record,qual_chall:2010-468:727,,2010-468,Estoril,2010,Q3,104665,104665,103252,7-6(1) 6-2,atp/atp_matches_qual_chall_2010.csv,3369
+conflicting_record,qual_chall:2011-315:710,,2011-315,Newport,2011,Q2,104372,104372,104330,3-6 7-5 6-3,atp/atp_matches_qual_chall_2011.csv,987
+conflicting_record,qual_chall:2011-315:711,,2011-315,Newport,2011,Q2,104330,104372,104330,2-6 6-1 6-1,atp/atp_matches_qual_chall_2011.csv,988
+conflicting_record,qual_chall:2011-315:712,,2011-315,Newport,2011,Q2,104171,104398,104171,6-3 6-2,atp/atp_matches_qual_chall_2011.csv,989
+conflicting_record,qual_chall:2011-315:713,,2011-315,Newport,2011,Q2,104398,104171,104398,6-1 6-4,atp/atp_matches_qual_chall_2011.csv,990
+conflicting_record,qual_chall:2011-315:714,,2011-315,Newport,2011,Q2,103676,104733,103676,7-6(6) 6-4,atp/atp_matches_qual_chall_2011.csv,991
+conflicting_record,qual_chall:2011-315:715,,2011-315,Newport,2011,Q2,104733,104733,103676,6-4 6-1,atp/atp_matches_qual_chall_2011.csv,992
+conflicting_record,qual_chall:2011-6120:725,,2011-6120,Nice,2011,Q3,105332,105332,105137,7-6(2) 5-7 6-0,atp/atp_matches_qual_chall_2011.csv,4710
+conflicting_record,qual_chall:2011-6120:726,,2011-6120,Nice,2011,Q3,105137,105332,105137,6-2 6-1,atp/atp_matches_qual_chall_2011.csv,4711
+conflicting_record,qual_chall:2020-9190:270,,2020-9190,Parma CH,2020,F,126207,126207,106099,,atp/atp_matches_qual_chall_2020.csv,2923
+conflicting_record,qual_chall:2020-9190:301,,2020-9190,Parma CH,2020,F,126207,106099,126207,6-3 3-6 6-4,atp/atp_matches_qual_chall_2020.csv,2954
+duplicate_record,tour:1969-425:247,tour:1969-425:245,1969-425,Barcelona,1969,R64,199999,199999,199999,UNK,atp/atp_matches_1969.csv,989
+duplicate_record,tour:1971-389:279,tour:1971-389:275,1971-389,Denver,1971,RR,100244,100011,100244,6-4,atp/atp_matches_1971.csv,1190
+duplicate_record,tour:1971-389:280,tour:1971-389:276,1971-389,Denver,1971,RR,100244,100244,100148,6-3,atp/atp_matches_1971.csv,1191
+duplicate_record,qual_chall:2007-505:266,qual_chall:2007-505:1,2007-505,Vina del Mar,2007,Q1,102287,104477,102287,6-4 6-1,atp/atp_matches_qual_chall_2007.csv,7090
+duplicate_record,qual_chall:2007-505:265,qual_chall:2007-505:3,2007-505,Vina del Mar,2007,Q1,103169,104195,103169,6-4 6-4,atp/atp_matches_qual_chall_2007.csv,7091
+duplicate_record,qual_chall:2007-505:264,qual_chall:2007-505:5,2007-505,Vina del Mar,2007,Q1,104043,104043,103581,6-4 1-6 7-5,atp/atp_matches_qual_chall_2007.csv,7092
+duplicate_record,qual_chall:2007-505:263,qual_chall:2007-505:6,2007-505,Vina del Mar,2007,Q1,103700,102548,103700,6-3 6-2,atp/atp_matches_qual_chall_2007.csv,7093
+duplicate_record,qual_chall:2007-505:262,qual_chall:2007-505:2,2007-505,Vina del Mar,2007,Q1,104007,104007,102987,4-6 6-3 6-3,atp/atp_matches_qual_chall_2007.csv,7094
+duplicate_record,qual_chall:2007-505:269,qual_chall:2007-505:7,2007-505,Vina del Mar,2007,Q2,102287,104007,102287,6-2 3-6 6-1,atp/atp_matches_qual_chall_2007.csv,7087
+duplicate_record,qual_chall:2007-505:268,qual_chall:2007-505:8,2007-505,Vina del Mar,2007,Q2,103169,103169,103675,6-3 6-2,atp/atp_matches_qual_chall_2007.csv,7088
+duplicate_record,qual_chall:2007-505:267,qual_chall:2007-505:9,2007-505,Vina del Mar,2007,Q2,103700,103700,104043,2-6 RET,atp/atp_matches_qual_chall_2007.csv,7089
+duplicate_record,qual_chall:2024-7288:384,qual_chall:2024-7288:385,2024-7288,Seoul CH,2024,F,105932,106121,105932,7-5 6-4,atp/atp_matches_qual_chall_2024.csv,10237
+duplicate_record,tour:2024-M-DC-2024-WG1-M-AUT-TUR-01:3,tour:2024-M-DC-2024-WG1-M-AUT-TUR-01:2,2024-M-DC-2024-WG1-M-AUT-TUR-01,Davis Cup WG1 R1: AUT vs TUR,2024,RR,209903,209903,117356,7-6(3) 6-2,atp/atp_matches_2024.csv,2921
+duplicate_record,qual_chall:2025-2889:384,qual_chall:2025-2889:385,2025-2889,Antofagasta CH,2025,F,106426,207680,106426,2-6 6-3 6-3,atp/atp_matches_qual_chall_2025.csv,9211
+duplicate_record,tour:2025-M-DC-2025-WG2-M-ESA-ROU-01:3,tour:2025-M-DC-2025-WG2-M-ESA-ROU-01:2,2025-M-DC-2025-WG2-M-ESA-ROU-01,Davis Cup WG2 R1: ESA vs ROU,2025,RR,212244,211570,212244,6-1 2-6 6-2,atp/atp_matches_2025.csv,2867
+duplicate_record,qual_chall:2026-2913:384,qual_chall:2026-2913:385,2026-2913,Kigali 1 CH,2026,F,212082,109303,212082,7-6(5) 7-6(6),atp/atp_matches_qual_chall_2026.csv,2424
+player_repeated_in_round,qual_chall:1978-671:247,,1978-671,Cape Cod CH,1978,R64,100368,100368,107322,6-2 6-4,atp/atp_matches_qual_chall_1978.csv,515
+player_repeated_in_round,qual_chall:1978-671:248,,1978-671,Cape Cod CH,1978,R64,100368,100418,100368,6-2 6-4,atp/atp_matches_qual_chall_1978.csv,516
+player_repeated_in_round,qual_chall:1978-724:249,,1978-724,Hilton Head CH,1978,R64,100410,100410,100418,6-3 6-2,atp/atp_matches_qual_chall_1978.csv,327
+player_repeated_in_round,qual_chall:1978-724:250,,1978-724,Hilton Head CH,1978,R64,100410,100410,107875,6-3 6-2,atp/atp_matches_qual_chall_1978.csv,328
+player_repeated_in_round,qual_chall:1979-280:271,,1979-280,Guadalajara CH,1979,R32,107544,107544,107322,6-2 6-2,atp/atp_matches_qual_chall_1979.csv,943
+player_repeated_in_round,qual_chall:1979-280:272,,1979-280,Guadalajara CH,1979,R32,107544,100418,107544,6-2 6-2,atp/atp_matches_qual_chall_1979.csv,944
+player_repeated_in_round,qual_chall:1981-213:262,,1981-213,San Luis Potosi CH,1981,R64,100385,107322,100385,6-1 6-4,atp/atp_matches_qual_chall_1981.csv,335
+player_repeated_in_round,qual_chall:1981-213:263,,1981-213,San Luis Potosi CH,1981,R64,100385,100418,100385,6-1 6-4,atp/atp_matches_qual_chall_1981.csv,336
+player_repeated_in_round,futures:1991-M-SA-ESP-08A-1991b:7,,1991-M-SA-ESP-08A-1991b,Spain 8 Masters 2,1991,R32,124436,109771,124436,5-7 3-2 RET,atp/atp_matches_futures_1991.csv,6430
+player_repeated_in_round,futures:1991-M-SA-ESP-08A-1991b:11,,1991-M-SA-ESP-08A-1991b,Spain 8 Masters 2,1991,R32,109771,109771,107416,4-6 6-3 6-2,atp/atp_matches_futures_1991.csv,6434
+player_repeated_in_round,futures:1992-M-SA-POR-03A-1992c:5,,1992-M-SA-POR-03A-1992c,Portugal 3 Masters 3,1992,R32,101498,109771,101498,6-4 6-2,atp/atp_matches_futures_1992.csv,6927
+player_repeated_in_round,futures:1992-M-SA-POR-03A-1992c:8,,1992-M-SA-POR-03A-1992c,Portugal 3 Masters 3,1992,R32,102397,109771,102397,6-7 7-6 6-4,atp/atp_matches_futures_1992.csv,6930
+player_repeated_in_round,futures:1993-M-SA-CHN-01A-1993c:1,,1993-M-SA-CHN-01A-1993c,China Masters 3,1993,R32,101204,101853,101204,6-4 7-5,atp/atp_matches_futures_1993.csv,4427
+player_repeated_in_round,futures:1993-M-SA-CHN-01A-1993c:6,,1993-M-SA-CHN-01A-1993c,China Masters 3,1993,R32,101853,101700,101853,6-4 7-5,atp/atp_matches_futures_1993.csv,4432
+player_repeated_in_round,futures:1995-M-SA-ESP-06A-1995d:9,,1995-M-SA-ESP-06A-1995d,Spain 7 Masters 4,1995,R32,102950,109771,102950,6-1 3-6 7-6,atp/atp_matches_futures_1995.csv,7534
+player_repeated_in_round,futures:1995-M-SA-ESP-06A-1995d:10,,1995-M-SA-ESP-06A-1995d,Spain 7 Masters 4,1995,R32,102950,102692,102950,6-1 3-6 7-6,atp/atp_matches_futures_1995.csv,7535
+player_repeated_in_round,futures:1995-M-SA-SWE-01A-1995b:5,,1995-M-SA-SWE-01A-1995b,Sweden Masters 2,1995,R32,103178,103178,102260,6-2 6-1,atp/atp_matches_futures_1995.csv,8752
+player_repeated_in_round,futures:1995-M-SA-SWE-01A-1995b:6,,1995-M-SA-SWE-01A-1995b,Sweden Masters 2,1995,R32,103178,103178,102963,6-2 6-1,atp/atp_matches_futures_1995.csv,8753
+player_repeated_in_round,futures:1996-M-SA-MEX-04A-1996c:6,,1996-M-SA-MEX-04A-1996c,Cuba Mexico Masters 3,1996,R32,122902,102474,122902,0-2 RET,atp/atp_matches_futures_1996.csv,7732
+player_repeated_in_round,futures:1996-M-SA-MEX-04A-1996c:11,,1996-M-SA-MEX-04A-1996c,Cuba Mexico Masters 3,1996,R32,102474,102474,101827,0-2 RET,atp/atp_matches_futures_1996.csv,7737
+player_repeated_in_round,futures:1998-M-SA-TUR-02A-1998c:6,,1998-M-SA-TUR-02A-1998c,Turkey 2 Masters 3,1998,R32,101121,117932,101121,4-6 6-3 6-4,atp/atp_matches_futures_1998.csv,8665
+player_repeated_in_round,futures:1998-M-SA-TUR-02A-1998c:12,,1998-M-SA-TUR-02A-1998c,Turkey 2 Masters 3,1998,R32,103174,103174,117932,6-0 6-2,atp/atp_matches_futures_1998.csv,8671
+player_repeated_in_round,futures:1999-M-SA-IND-02A-1999b:8,,1999-M-SA-IND-02A-1999b,India 2 Masters 2,1999,R32,102276,102276,103043,3-6 6-3 6-3,atp/atp_matches_futures_1999.csv,11055
+player_repeated_in_round,futures:1999-M-SA-IND-02A-1999b:13,,1999-M-SA-IND-02A-1999b,India 2 Masters 2,1999,R32,102276,102276,103567,3-6 6-3 6-3,atp/atp_matches_futures_1999.csv,11060
+player_repeated_in_round,futures:2000-M-FU-KOR-02A-2000:5,,2000-M-FU-KOR-02A-2000,Korea F2,2000,R32,103158,117787,103158,4-6 6-2 6-1,atp/atp_matches_futures_2000.csv,4503
+player_repeated_in_round,futures:2000-M-FU-KOR-02A-2000:15,,2000-M-FU-KOR-02A-2000,Korea F2,2000,R32,103871,103871,117787,7-5 2-6 7-5,atp/atp_matches_futures_2000.csv,4513
+player_repeated_in_round,qual_chall:2002-400:3,,2002-400,Biella CH,2002,R32,102143,102143,102999,6-4 6-2,atp/atp_matches_qual_chall_2002.csv,1026
+player_repeated_in_round,qual_chall:2002-400:4,,2002-400,Biella CH,2002,R32,102087,102087,102999,6-1 6-2,atp/atp_matches_qual_chall_2002.csv,1027
+player_repeated_in_round,futures:2002-M-FU-KOR-03A-2002:6,,2002-M-FU-KOR-03A-2002,Korea Rep F3,2002,R32,104478,117787,104478,6-3 7-5,atp/atp_matches_futures_2002.csv,7727
+player_repeated_in_round,futures:2002-M-FU-KOR-03A-2002:14,,2002-M-FU-KOR-03A-2002,Korea Rep F3,2002,R32,117787,117787,118884,7-6(3) 6-4,atp/atp_matches_futures_2002.csv,7735
+player_repeated_in_round,futures:2002-M-FU-KOR-04A-2002:8,,2002-M-FU-KOR-04A-2002,Korea Rep F4,2002,R32,102011,117787,102011,6-1 7-5,atp/atp_matches_futures_2002.csv,7946
+player_repeated_in_round,futures:2002-M-FU-KOR-04A-2002:11,,2002-M-FU-KOR-04A-2002,Korea Rep F4,2002,R32,103409,103409,117787,6-1 6-3,atp/atp_matches_futures_2002.csv,7949
+player_repeated_in_round,qual_chall:2004-2:15,,2004-2,Ho Chi Minh CH,2004,R32,103921,103921,103921,6-2 6-3,atp/atp_matches_qual_chall_2004.csv,914
+player_repeated_in_round,qual_chall:2004-883:3,,2004-883,Santiago CH,2004,R32,104314,103737,104314,6-4 6-2,atp/atp_matches_qual_chall_2004.csv,4467
+player_repeated_in_round,qual_chall:2004-883:8,,2004-883,Santiago CH,2004,R32,103737,103228,103737,6-3 3-6 6-3,atp/atp_matches_qual_chall_2004.csv,4472
+player_repeated_in_round,qual_chall:2005-574:2,,2005-574,Waikoloa CH,2005,R32,103762,103920,103762,6-4 6-3,atp/atp_matches_qual_chall_2005.csv,3133
+player_repeated_in_round,qual_chall:2005-574:10,,2005-574,Waikoloa CH,2005,R32,102821,103920,102821,6-3 6-1,atp/atp_matches_qual_chall_2005.csv,3141
+player_repeated_in_round,qual_chall:2007-3666:2,,2007-3666,Kuala Lumpur CH,2007,R32,103921,104583,103921,6-3 3-6 6-3,atp/atp_matches_qual_chall_2007.csv,3461
+player_repeated_in_round,qual_chall:2007-3666:14,,2007-3666,Kuala Lumpur CH,2007,R32,104583,103921,104583,7-6(6) 3-6 7-5,atp/atp_matches_qual_chall_2007.csv,3473
+player_repeated_in_round,qual_chall:2007-3668:2,,2007-3668,Burnie2 CH,2007,R32,110685,110685,103977,6-1 6-2,atp/atp_matches_qual_chall_2007.csv,3523
+player_repeated_in_round,qual_chall:2007-3668:14,,2007-3668,Burnie2 CH,2007,R32,103977,110685,103977,6-1 3-6 6-3,atp/atp_matches_qual_chall_2007.csv,3535
+player_repeated_in_round,qual_chall:2007-505:4,,2007-505,Vina del Mar,2007,Q1,103675,104209,103675,6-2 6-7(5) 6-1,atp/atp_matches_qual_chall_2007.csv,4663
+player_repeated_in_round,qual_chall:2007-505:261,,2007-505,Vina del Mar,2007,Q1,103675,103675,104209,6-2 6-7(5) 6-1,atp/atp_matches_qual_chall_2007.csv,7095
+player_repeated_in_round,qual_chall:2008-1741:9,,2008-1741,Busan CH,2008,R32,103821,105036,103821,6-0 6-2,atp/atp_matches_qual_chall_2008.csv,256
+player_repeated_in_round,qual_chall:2008-1741:15,,2008-1741,Busan CH,2008,R32,105036,104437,105036,6-2 3-6 6-3,atp/atp_matches_qual_chall_2008.csv,262
+player_repeated_in_round,qual_chall:2010-1604:6,,2010-1604,Trani CH,2010,R32,105074,104970,105074,7-6(3) 6-4,atp/atp_matches_qual_chall_2010.csv,120
+player_repeated_in_round,qual_chall:2010-1604:15,,2010-1604,Trani CH,2010,R32,103035,104970,103035,6-4 7-5,atp/atp_matches_qual_chall_2010.csv,129
+player_repeated_in_round,qual_chall:2010-468:726,,2010-468,Estoril,2010,Q3,103252,104665,103252,6-3 6-4,atp/atp_matches_qual_chall_2010.csv,3368
+player_repeated_in_round,qual_chall:2010-468:727,,2010-468,Estoril,2010,Q3,104665,104665,103252,7-6(1) 6-2,atp/atp_matches_qual_chall_2010.csv,3369
+player_repeated_in_round,qual_chall:2011-315:710,,2011-315,Newport,2011,Q2,104372,104372,104330,3-6 7-5 6-3,atp/atp_matches_qual_chall_2011.csv,987
+player_repeated_in_round,qual_chall:2011-315:711,,2011-315,Newport,2011,Q2,104330,104372,104330,2-6 6-1 6-1,atp/atp_matches_qual_chall_2011.csv,988
+player_repeated_in_round,qual_chall:2011-315:712,,2011-315,Newport,2011,Q2,104171,104398,104171,6-3 6-2,atp/atp_matches_qual_chall_2011.csv,989
+player_repeated_in_round,qual_chall:2011-315:713,,2011-315,Newport,2011,Q2,104398,104171,104398,6-1 6-4,atp/atp_matches_qual_chall_2011.csv,990
+player_repeated_in_round,qual_chall:2011-315:714,,2011-315,Newport,2011,Q2,103676,104733,103676,7-6(6) 6-4,atp/atp_matches_qual_chall_2011.csv,991
+player_repeated_in_round,qual_chall:2011-315:715,,2011-315,Newport,2011,Q2,104733,104733,103676,6-4 6-1,atp/atp_matches_qual_chall_2011.csv,992
+player_repeated_in_round,qual_chall:2011-6120:725,,2011-6120,Nice,2011,Q3,105332,105332,105137,7-6(2) 5-7 6-0,atp/atp_matches_qual_chall_2011.csv,4710
+player_repeated_in_round,qual_chall:2011-6120:726,,2011-6120,Nice,2011,Q3,105137,105332,105137,6-2 6-1,atp/atp_matches_qual_chall_2011.csv,4711
+player_repeated_in_round,qual_chall:2015-6967:708,,2015-6967,Shenzhen,2015,Q2,105026,105026,103863,6-4 7-5,atp/atp_matches_qual_chall_2015.csv,4633
+player_repeated_in_round,qual_chall:2015-6967:709,,2015-6967,Shenzhen,2015,Q2,105051,103863,105051,6-3 7-6(1),atp/atp_matches_qual_chall_2015.csv,4634
+player_repeated_in_round,qual_chall:2015-6967:712,,2015-6967,Shenzhen,2015,Q2,105655,105655,106291,6-1 6-3,atp/atp_matches_qual_chall_2015.csv,4637
+player_repeated_in_round,qual_chall:2015-6967:713,,2015-6967,Shenzhen,2015,Q2,111190,111190,106291,3-6 6-3 6-2,atp/atp_matches_qual_chall_2015.csv,4638
+player_repeated_in_round,futures:2015-M-FU-JPN-06A-2015:18,,2015-M-FU-JPN-06A-2015,Japan F6,2015,R16,105403,105403,105552,6-3 6-2,atp/atp_matches_futures_2015.csv,8512
+player_repeated_in_round,futures:2015-M-FU-JPN-06A-2015:21,,2015-M-FU-JPN-06A-2015,Japan F6,2015,R16,111447,105552,111447,3-6 7-6(6) 6-3,atp/atp_matches_futures_2015.csv,8515
+player_repeated_in_round,futures:2015-M-FU-JPN-06A-2015:3,,2015-M-FU-JPN-06A-2015,Japan F6,2015,R32,105552,121002,105552,7-6(7) 6-7(5) 6-4,atp/atp_matches_futures_2015.csv,8497
+player_repeated_in_round,futures:2015-M-FU-JPN-06A-2015:9,,2015-M-FU-JPN-06A-2015,Japan F6,2015,R32,105552,126337,105552,7-5 2-6 6-2,atp/atp_matches_futures_2015.csv,8503
+player_repeated_in_round,qual_chall:2016-3473:245,,2016-3473,Como CH,2016,Q1,123755,123755,106324,6-1 7-6(3),atp/atp_matches_qual_chall_2016.csv,2887
+player_repeated_in_round,qual_chall:2016-3473:246,,2016-3473,Como CH,2016,Q1,106203,106324,106203,6-3 4-6 6-2,atp/atp_matches_qual_chall_2016.csv,2888
+player_repeated_in_round,qual_chall:2016-3994:251,,2016-3994,Cali CH,2016,Q1,111788,125801,111788,6-2 6-1,atp/atp_matches_qual_chall_2016.csv,3383
+player_repeated_in_round,qual_chall:2016-3994:254,,2016-3994,Cali CH,2016,Q1,106232,125801,106232,6-3 6-3,atp/atp_matches_qual_chall_2016.csv,3386
+player_repeated_in_round,qual_chall:2016-6590:244,,2016-6590,Sibiu CH,2016,Q1,105801,105399,105801,6-3 7-6(3),atp/atp_matches_qual_chall_2016.csv,5185
+player_repeated_in_round,qual_chall:2016-6590:257,,2016-6590,Sibiu CH,2016,Q1,106389,105801,106389,6-1 6-1,atp/atp_matches_qual_chall_2016.csv,5196
+player_repeated_in_round,qual_chall:2016-7182:244,,2016-7182,Happy Valley CH,2016,Q1,122059,122059,122059,6-7(3) 6-4 6-2,atp/atp_matches_qual_chall_2016.csv,6525
+player_repeated_in_round,qual_chall:2016-7318:245,,2016-7318,Columbus CH,2016,Q1,105534,105534,132528,6-3 7-6(4),atp/atp_matches_qual_chall_2016.csv,7313
+player_repeated_in_round,qual_chall:2016-7318:246,,2016-7318,Columbus CH,2016,Q1,106382,110749,106382,6-2 7-5,atp/atp_matches_qual_chall_2016.csv,7314
+player_repeated_in_round,qual_chall:2016-7318:247,,2016-7318,Columbus CH,2016,Q1,106399,132528,106399,6-4 7-5,atp/atp_matches_qual_chall_2016.csv,7315
+player_repeated_in_round,qual_chall:2016-7318:250,,2016-7318,Columbus CH,2016,Q1,106382,106382,120798,6-2 6-0,atp/atp_matches_qual_chall_2016.csv,7317
+player_repeated_in_round,qual_chall:2016-7318:260,,2016-7318,Columbus CH,2016,Q2,106382,106382,106399,7-6(3) 6-2,atp/atp_matches_qual_chall_2016.csv,7325
+player_repeated_in_round,qual_chall:2016-7318:262,,2016-7318,Columbus CH,2016,Q2,106382,104765,106382,6-4 3-6 6-4,atp/atp_matches_qual_chall_2016.csv,7327
+player_repeated_in_round,qual_chall:2016-7318:267,,2016-7318,Columbus CH,2016,Q3,108761,106382,108761,6-4 6-1,atp/atp_matches_qual_chall_2016.csv,7332
+player_repeated_in_round,qual_chall:2016-7318:268,,2016-7318,Columbus CH,2016,Q3,105933,105933,106382,6-4 6-4,atp/atp_matches_qual_chall_2016.csv,7333
+player_repeated_in_round,qual_chall:2016-7492:243,,2016-7492,Nanjing CH,2016,Q1,110763,110763,133071,5-7 6-1 6-1,atp/atp_matches_qual_chall_2016.csv,8504
+player_repeated_in_round,qual_chall:2016-7492:244,,2016-7492,Nanjing CH,2016,Q1,128070,128070,133071,6-4 4-6 6-4,atp/atp_matches_qual_chall_2016.csv,8505
+player_repeated_in_round,qual_chall:2016-7492:252,,2016-7492,Nanjing CH,2016,Q1,105448,105448,127165,7-5 6-4,atp/atp_matches_qual_chall_2016.csv,8512
+player_repeated_in_round,qual_chall:2016-7492:255,,2016-7492,Nanjing CH,2016,Q1,105448,105448,105850,2-6 4-5 RET,atp/atp_matches_qual_chall_2016.csv,8514
+player_repeated_in_round,qual_chall:2016-7492:263,,2016-7492,Nanjing CH,2016,Q2,106225,105448,106225,6-4 7-6(4),atp/atp_matches_qual_chall_2016.csv,8521
+player_repeated_in_round,qual_chall:2016-7492:264,,2016-7492,Nanjing CH,2016,Q2,104644,105448,104644,6-2 6-4,atp/atp_matches_qual_chall_2016.csv,8522
+player_repeated_in_round,qual_chall:2016-7553:261,,2016-7553,Chengdu CH,2016,Q1,105026,105026,105026,6-0 6-0,atp/atp_matches_qual_chall_2016.csv,8859
+player_repeated_in_round,qual_chall:2016-7614:249,,2016-7614,Astana CH,2016,Q1,105781,105781,105781,6-1 6-3,atp/atp_matches_qual_chall_2016.csv,9233
+player_repeated_in_round,qual_chall:2016-M055:243,,2016-M055,Lexington CH,2016,Q1,104233,111208,104233,6-3 5-7 6-1,atp/atp_matches_qual_chall_2016.csv,9792
+player_repeated_in_round,qual_chall:2016-M055:244,,2016-M055,Lexington CH,2016,Q1,104070,104070,111208,7-6(0) 6-1,atp/atp_matches_qual_chall_2016.csv,9793
+player_repeated_in_round,futures:2018-M-FU-BOL-03B-2018:1,,2018-M-FU-BOL-03B-2018,Bolivia F3,2018,R32,125825,208287,125825,6-3 6-1,atp/atp_matches_futures_2018.csv,13205
+player_repeated_in_round,futures:2018-M-FU-BOL-03B-2018:12,,2018-M-FU-BOL-03B-2018,Bolivia F3,2018,R32,126119,126119,208287,6-7(7) 6-2 6-3,atp/atp_matches_futures_2018.csv,13216
+player_repeated_in_round,futures:2018-M-FU-EGY-21A-2018:5,,2018-M-FU-EGY-21A-2018,Egypt F21,2018,R32,200309,200309,208299,6-1 6-3,atp/atp_matches_futures_2018.csv,13519
+player_repeated_in_round,futures:2018-M-FU-EGY-21A-2018:7,,2018-M-FU-EGY-21A-2018,Egypt F21,2018,R32,200390,200390,208299,6-2 6-0,atp/atp_matches_futures_2018.csv,13521
+player_repeated_in_round,futures:2018-M-FU-FRA-19A-2018:9,,2018-M-FU-FRA-19A-2018,France F19,2018,R32,106011,106011,208289,6-0 6-2,atp/atp_matches_futures_2018.csv,13244
+player_repeated_in_round,futures:2018-M-FU-FRA-19A-2018:16,,2018-M-FU-FRA-19A-2018,France F19,2018,R32,105874,105874,208289,6-0 6-4,atp/atp_matches_futures_2018.csv,13251
+player_repeated_in_round,futures:2018-M-FU-ISR-12A-2018:7,,2018-M-FU-ISR-12A-2018,Israel F12,2018,R32,106424,208304,106424,6-0 6-1,atp/atp_matches_futures_2018.csv,13583
+player_repeated_in_round,futures:2018-M-FU-ISR-12A-2018:10,,2018-M-FU-ISR-12A-2018,Israel F12,2018,R32,133909,208304,133909,6-3 7-6(4),atp/atp_matches_futures_2018.csv,13586
+player_repeated_in_round,futures:2018-M-FU-JPN-07A-2018:2,,2018-M-FU-JPN-07A-2018,Japan F7,2018,R32,201987,201987,208116,6-2 7-5,atp/atp_matches_futures_2018.csv,6882
+player_repeated_in_round,futures:2018-M-FU-JPN-07A-2018:11,,2018-M-FU-JPN-07A-2018,Japan F7,2018,R32,201982,208116,201982,6-1 6-7(5) 6-2,atp/atp_matches_futures_2018.csv,6891
+player_repeated_in_round,futures:2018-M-FU-USA-19A-2018:2,,2018-M-FU-USA-19A-2018,USA F19,2018,R32,202242,208142,202242,7-6(13) 6-3,atp/atp_matches_futures_2018.csv,8711
+player_repeated_in_round,futures:2018-M-FU-USA-19A-2018:4,,2018-M-FU-USA-19A-2018,USA F19,2018,R32,111809,111809,208142,6-2 6-0,atp/atp_matches_futures_2018.csv,8713
+player_repeated_in_round,futures:2019-M-ITF-FRA-21A-2019:10,,2019-M-ITF-FRA-21A-2019,M15 Villers Les Nancy,2019,R32,209355,209355,208147,1-6 6-4 6-1,atp/atp_matches_futures_2019.csv,15625
+player_repeated_in_round,futures:2019-M-ITF-FRA-21A-2019:11,,2019-M-ITF-FRA-21A-2019,M15 Villers Les Nancy,2019,R32,202324,208147,202324,6-2 6-2,atp/atp_matches_futures_2019.csv,15626
+player_repeated_in_round,qual_chall:2020-9190:270,,2020-9190,Parma CH,2020,F,126207,126207,106099,,atp/atp_matches_qual_chall_2020.csv,2923
+player_repeated_in_round,qual_chall:2020-9190:301,,2020-9190,Parma CH,2020,F,126207,106099,126207,6-3 3-6 6-4,atp/atp_matches_qual_chall_2020.csv,2954
+player_repeated_in_round,futures:2021-M-ITF-USA-27A-2021:113,,2021-M-ITF-USA-27A-2021,M25 Columbus OH,2021,R32,200219,208142,200219,6-3 6-0,atp/atp_matches_futures_2021.csv,11784
+player_repeated_in_round,futures:2021-M-ITF-USA-27A-2021:116,,2021-M-ITF-USA-27A-2021,M25 Columbus OH,2021,R32,209182,208142,209182,6-1 6-1,atp/atp_matches_futures_2021.csv,11787
+player_repeated_in_round,futures:2022-M-ITF-FRA-19A-2022:102,,2022-M-ITF-FRA-19A-2022,M15 Villers-les-Nancy,2022,R32,208147,208147,123920,6-2 6-4,atp/atp_matches_futures_2022.csv,5520
+player_repeated_in_round,futures:2022-M-ITF-FRA-19A-2022:106,,2022-M-ITF-FRA-19A-2022,M15 Villers-les-Nancy,2022,R32,209983,209983,208147,2-6 7-6(5) 6-1,atp/atp_matches_futures_2022.csv,5524
+player_repeated_in_round,futures:2024-M-ITF-FRA-2024-029:103,,2024-M-ITF-FRA-2024-029,M15 Villers-les-Nancy,2024,R32,210328,208147,210328,6-1 6-4,atp/atp_matches_futures_2024.csv,5905
+player_repeated_in_round,futures:2024-M-ITF-FRA-2024-029:107,,2024-M-ITF-FRA-2024-029,M15 Villers-les-Nancy,2024,R32,208147,200457,208147,7-5 6-1,atp/atp_matches_futures_2024.csv,5909
+player_repeated_in_round,qual_chall:2025-3021:370,,2025-3021,Targu Mures CH,2025,R32,105477,105477,126523,6-4 6-3,atp/atp_matches_qual_chall_2025.csv,8629
+player_repeated_in_round,qual_chall:2025-3021:369,,2025-3021,Targu Mures CH,2025,R32,209983,202297,209983,7-6(3) 6-3,atp/atp_matches_qual_chall_2025.csv,8630
+player_repeated_in_round,qual_chall:2025-3021:368,,2025-3021,Targu Mures CH,2025,R32,106162,208024,106162,6-2 7-6(5),atp/atp_matches_qual_chall_2025.csv,8631
+player_repeated_in_round,qual_chall:2025-3021:367,,2025-3021,Targu Mures CH,2025,R32,209405,202209,209405,6-2 6-3,atp/atp_matches_qual_chall_2025.csv,8632
+player_repeated_in_round,qual_chall:2025-3021:366,,2025-3021,Targu Mures CH,2025,R32,202262,206867,202262,6-2 6-1,atp/atp_matches_qual_chall_2025.csv,8633
+player_repeated_in_round,qual_chall:2025-3021:365,,2025-3021,Targu Mures CH,2025,R32,105814,105814,207732,4-6 7-6(4) 6-4,atp/atp_matches_qual_chall_2025.csv,8634
+player_repeated_in_round,qual_chall:2025-3021:364,,2025-3021,Targu Mures CH,2025,R32,207704,207704,207484,6-2 6-4,atp/atp_matches_qual_chall_2025.csv,8635
+player_repeated_in_round,qual_chall:2025-3021:363,,2025-3021,Targu Mures CH,2025,R32,207502,207502,207231,7-6(5) 6-4,atp/atp_matches_qual_chall_2025.csv,8636
+player_repeated_in_round,qual_chall:2025-3021:362,,2025-3021,Targu Mures CH,2025,R32,209890,207660,209890,4-6 6-3 6-4,atp/atp_matches_qual_chall_2025.csv,8637
+player_repeated_in_round,qual_chall:2025-3021:361,,2025-3021,Targu Mures CH,2025,R32,206589,206589,202150,6-3 6-1,atp/atp_matches_qual_chall_2025.csv,8638
+player_repeated_in_round,qual_chall:2025-3021:360,,2025-3021,Targu Mures CH,2025,R32,206470,206470,211364,6-3 6-2,atp/atp_matches_qual_chall_2025.csv,8639
+player_repeated_in_round,qual_chall:2025-3021:200,,2025-3021,Targu Mures CH,2025,R32,211364,211364,105477,,atp/atp_matches_qual_chall_2025.csv,8645
+player_repeated_in_round,qual_chall:2025-3021:199,,2025-3021,Targu Mures CH,2025,R32,126523,209983,126523,,atp/atp_matches_qual_chall_2025.csv,8646
+player_repeated_in_round,qual_chall:2025-3021:198,,2025-3021,Targu Mures CH,2025,R32,202297,106162,202297,,atp/atp_matches_qual_chall_2025.csv,8647
+player_repeated_in_round,qual_chall:2025-3021:197,,2025-3021,Targu Mures CH,2025,R32,208024,208024,202209,,atp/atp_matches_qual_chall_2025.csv,8648
+player_repeated_in_round,qual_chall:2025-3021:196,,2025-3021,Targu Mures CH,2025,R32,209405,202262,209405,,atp/atp_matches_qual_chall_2025.csv,8649
+player_repeated_in_round,qual_chall:2025-3021:195,,2025-3021,Targu Mures CH,2025,R32,206867,206867,207732,,atp/atp_matches_qual_chall_2025.csv,8650
+player_repeated_in_round,qual_chall:2025-3021:194,,2025-3021,Targu Mures CH,2025,R32,105814,207704,105814,,atp/atp_matches_qual_chall_2025.csv,8651
+player_repeated_in_round,qual_chall:2025-3021:193,,2025-3021,Targu Mures CH,2025,R32,207484,207484,207502,,atp/atp_matches_qual_chall_2025.csv,8652
+player_repeated_in_round,qual_chall:2025-3021:192,,2025-3021,Targu Mures CH,2025,R32,207231,209890,207231,,atp/atp_matches_qual_chall_2025.csv,8653
+player_repeated_in_round,qual_chall:2025-3021:191,,2025-3021,Targu Mures CH,2025,R32,207660,207660,206589,,atp/atp_matches_qual_chall_2025.csv,8654
+player_repeated_in_round,qual_chall:2025-3021:190,,2025-3021,Targu Mures CH,2025,R32,202150,206470,202150,,atp/atp_matches_qual_chall_2025.csv,8655

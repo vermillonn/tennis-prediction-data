@@ -1,0 +1,68 @@
+# All singles families (tour + qualifying/challenger + futures). Shares the raw snapshot with
+# default.toml but writes to separate validated/quarantine/report directories.
+#
+# Default pipeline configuration. All relative paths resolve against the project
+# root (the directory containing pyproject.toml), not the current shell directory.
+
+[source]
+name = "tennis-sackmann-archive"
+repo = "Aneeshers/tennis-sackmann-archive"
+# Pinned archive commit. Every raw file is fetched from this exact commit, so the
+# bytes are content-addressed and reproducible. Change it deliberately, never implicitly.
+commit = "83733587353df8a41f2fd4f516147d5aa83f5a8d"
+# "download": fetch from {base_url}/{repo}/{commit}/{path}
+# "local":    copy from an existing clone at local_path (its HEAD must equal `commit`
+#             unless verify_local_commit = false, in which case provenance records it as unverified)
+mode = "download"
+base_url = "https://raw.githubusercontent.com"
+local_path = ""
+verify_local_commit = true
+timeout_seconds = 120
+license = "CC BY-NC-SA 4.0"
+attribution = "Data compiled by Jeff Sackmann (https://github.com/JeffSackmann/tennis_atp), mirrored by Aneeshers/tennis-sackmann-archive."
+
+[selection]
+# File families: "tour" = atp_matches_YYYY.csv (tour-level main draws, incl. Davis Cup),
+# "qual_chall" = atp_matches_qual_chall_YYYY.csv, "futures" = atp_matches_futures_YYYY.csv.
+families = ["tour", "qual_chall", "futures"]
+start_year = 1968
+end_year = 2026
+# Reference files used for identity coverage and source-discrepancy checks.
+include_players = true
+include_rankings = true
+
+[selection.family_years]
+# Coverage observed at the pinned commit.
+qual_chall = [1978, 2026]
+futures = [1991, 2026]
+
+[paths]
+raw_dir = "data/raw"
+validated_dir = "data/all_families/validated"
+quarantine_dir = "data/all_families/quarantine"
+reports_dir = "reports/all_families"
+duckdb_path = "data/all_families/tennis.duckdb"
+
+[validation]
+allowed_surfaces = ["Hard", "Clay", "Grass", "Carpet"]
+allowed_best_of = [1, 3, 5]
+# Codes from the source data dictionary, plus "O" (Olympics), observed in the tour files
+# but undocumented upstream, and the ITF prize-money tiers "15"/"25" observed in futures files.
+allowed_levels = ["G", "M", "A", "C", "S", "F", "D", "O", "E", "J", "T", "15", "25"]
+allowed_rounds = ["Q1", "Q2", "Q3", "Q4", "ER", "R128", "R64", "R32", "R16", "RR", "QF", "SF", "BR", "F"]
+# Rounds in which the same pair can legitimately meet more than once in one event.
+multi_meeting_rounds = ["RR", "ER", "BR"]
+# IDs the source uses as a shared stand-in for unidentified players. A shared ID would
+# merge many different people into one rating, so such rows are quarantined.
+placeholder_player_ids = [199999]
+# Implausibility (warning) threshold for |service games A - service games B|.
+max_service_game_diff = 2
+# A season is flagged as under-covered when the share of rows with complete serve
+# statistics falls below this, for seasons on/after the family's expected start year.
+min_stats_coverage = 0.80
+
+[validation.stats_expected_from]
+# Upstream README: match stats exist from 1991 (tour-level), 2008 (challengers), 2011 (tour qualifying).
+tour = 1991
+qual_chall = 2011
+futures = 9999

@@ -1,0 +1,6 @@
+reason,match_id,duplicate_of,tournament_id,tournament_name,season,round,winner_id,player_a_id,player_b_id,score,source_file,source_row_number
+duplicate_record,tour:1969-425:247,tour:1969-425:245,1969-425,Barcelona,1969,R64,199999,199999,199999,UNK,atp/atp_matches_1969.csv,989
+duplicate_record,tour:1971-389:279,tour:1971-389:275,1971-389,Denver,1971,RR,100244,100011,100244,6-4,atp/atp_matches_1971.csv,1190
+duplicate_record,tour:1971-389:280,tour:1971-389:276,1971-389,Denver,1971,RR,100244,100244,100148,6-3,atp/atp_matches_1971.csv,1191
+duplicate_record,tour:2024-M-DC-2024-WG1-M-AUT-TUR-01:3,tour:2024-M-DC-2024-WG1-M-AUT-TUR-01:2,2024-M-DC-2024-WG1-M-AUT-TUR-01,Davis Cup WG1 R1: AUT vs TUR,2024,RR,209903,209903,117356,7-6(3) 6-2,atp/atp_matches_2024.csv,2921
+duplicate_record,tour:2025-M-DC-2025-WG2-M-ESA-ROU-01:3,tour:2025-M-DC-2025-WG2-M-ESA-ROU-01:2,2025-M-DC-2025-WG2-M-ESA-ROU-01,Davis Cup WG2 R1: ESA vs ROU,2025,RR,212244,211570,212244,6-1 2-6 6-2,atp/atp_matches_2025.csv,2867
