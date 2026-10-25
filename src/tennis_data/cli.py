@@ -126,6 +126,58 @@ def _cmd_model_backtest(args, config) -> int:
     return 0
 
 
+def _cmd_prospective_import(args, config) -> int:
+    from tennis_data.prospective.backfill import ingest_file
+    from tennis_data.prospective.config import load_prospective_config
+
+    cfg = load_prospective_config(args.prospective_config)
+    rec = ingest_file(cfg, args.path, args.format)
+    print(
+        f"stored {rec['provider']} snapshot {rec['sha256'][:16]} ({rec['bytes']} bytes, retrieved {rec['retrieved_at']})"
+    )
+    return 0
+
+
+def _cmd_prospective_backfill(args, config) -> int:
+    from tennis_data.prospective.backfill import run_backfill
+    from tennis_data.prospective.config import load_prospective_config
+
+    s = run_backfill(load_prospective_config(args.prospective_config))["summary"]
+    print(f"raw snapshot {s['raw_snapshot_id']}: {s['provider_records']} records, {s['accepted_records']} accepted, "
+          f"{s['phase1_validated']} validated; state {s['state_snapshot_id']}")  # fmt: skip
+    return 0
+
+
+def _cmd_prospective_run(args, config) -> int:
+    from tennis_data.prospective.config import load_prospective_config
+    from tennis_data.prospective.pipeline import run_phase4a
+
+    res = run_phase4a(load_prospective_config(args.prospective_config))
+    rp, ready = res["replay"]["summary"], res["readiness"]
+    print(f"replay: {rp['cases']} cases, max error {rp['max_abs_error']:.1e}, passed={rp['passed']}")
+    print(f"freshness probe: {res['freshness']['status']}")
+    print(f"ready for prospective predictions: {ready['ready_for_prospective_predictions']}")
+    for b in ready["blockers"]:
+        print(f"  blocker: {b}")
+    print(f"reports: {res['cfg'].reports_dir}")
+    return 0
+
+
+def _cmd_prospective_predict(args, config) -> int:
+    import json as _json
+    from datetime import date as _date
+
+    from tennis_data.prospective.config import load_prospective_config
+    from tennis_data.prospective.pipeline import predict_upcoming
+    from tennis_data.prospective.state import UpcomingMatch
+
+    items = _json.loads(open(args.fixtures).read())
+    fixtures = [UpcomingMatch(**{**i, "tournament_date": _date.fromisoformat(i["tournament_date"])}) for i in items]
+    out = predict_upcoming(load_prospective_config(args.prospective_config), fixtures, args.mode)
+    out.write_csv(sys.stdout)
+    return 0
+
+
 def _modeling_dir_if_built():
     from tennis_data.modeling.config import DEFAULT_MODELING_CONFIG, load_modeling_config
 
@@ -187,6 +239,22 @@ def main(argv: list[str] | None = None) -> int:
     mb = sub.add_parser("model-backtest", help="Phase 3B: develop, select, freeze and evaluate models on top of Elo")
     mb.add_argument("--modeling-config", help="modeling TOML config (default: config/modeling.toml)")
     mb.add_argument("--no-cache", action="store_true", help="rebuild the joined modeling dataset")
+    for name, helptext in (("prospective-import", "store an authorized export immutably in the Phase 4A raw store"),
+                           ("prospective-backfill", "reconcile stored snapshots and extend the state (Phase 4A)"),
+                           ("prospective-run", "Phase 4A: gap audit, backfill, replay verification, readiness reports"),
+                           ("prospective-predict", "price upcoming matches with the frozen model (refuses stale state)")):  # fmt: skip
+        sp = sub.add_parser(name, help=helptext)
+        sp.add_argument("--prospective-config", help="config/prospective.toml by default")
+        if name == "prospective-import":
+            sp.add_argument("path")
+            sp.add_argument("--format", required=True, choices=["tennis-fixture-provider-1", "sackmann_csv"])
+        if name == "prospective-predict":
+            sp.add_argument("fixtures", help="JSON list of upcoming matches (UpcomingMatch fields)")
+            sp.add_argument(
+                "--mode",
+                default="prospective",
+                choices=["prospective", "exploratory_retrospective", "historical_reconstruction"],
+            )
     q = sub.add_parser(
         "query",
         help="run SQL against the DuckDB views (matches, quarantine, player_matches, players, elo_*, serve_return_features, model_*)",
@@ -201,7 +269,9 @@ def main(argv: list[str] | None = None) -> int:
         "ingest": _cmd_ingest, "verify": _cmd_verify, "build": _cmd_build, "report": _cmd_report,
         "docs": _cmd_docs, "run": _cmd_run, "query": _cmd_query, "elo-backtest": _cmd_elo_backtest,
         "features-build": _cmd_features_build, "features-docs": _cmd_features_docs,
-        "model-backtest": _cmd_model_backtest,
+        "model-backtest": _cmd_model_backtest, "prospective-import": _cmd_prospective_import,
+        "prospective-backfill": _cmd_prospective_backfill, "prospective-run": _cmd_prospective_run,
+        "prospective-predict": _cmd_prospective_predict,
     }  # fmt: skip
     try:
         config = load_config(args.config)

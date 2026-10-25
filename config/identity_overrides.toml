@@ -1,0 +1,9 @@
+# Explicit, reviewed identity decisions (provider id -> canonical player id). Each entry is applied as
+# "verified" with method "manual_override". Leave empty until a reviewer approves a mapping.
+# Example:
+# [[mapping]]
+# provider = "sportradar"
+# provider_player_id = "sr:competitor:12345"
+# canonical_player_id = 104925
+# reviewer = "name"
+# note = "same DOB and nationality; confirmed on ATP profile"
