@@ -10,6 +10,8 @@ Views:
   elo_sensitivity_predictions  retirement-sensitivity predictions (if built)
   elo_rating_history           rating state after each batch close, for the players it changed
   serve_return_features        Phase 3A point-in-time serve/return feature table (if built)
+  model_predictions            Phase 3B predictions of every registered experiment (if built)
+  model_selected_predictions   Phase 3B frozen selected model, development + exploratory (if built)
 """
 
 from __future__ import annotations
@@ -45,7 +47,11 @@ def _player_matches_sql() -> str:
 
 
 def connect(
-    config: Config, database: str | Path = ":memory:", elo_dir: Path | None = None, features_dir: Path | None = None
+    config: Config,
+    database: str | Path = ":memory:",
+    elo_dir: Path | None = None,
+    features_dir: Path | None = None,
+    modeling_dir: Path | None = None,
 ) -> duckdb.DuckDBPyConnection:
     validated = config.paths.validated_dir / "matches"
     if not validated.exists():
@@ -80,6 +86,11 @@ def connect(
         con.execute(
             f"CREATE OR REPLACE VIEW serve_return_features AS SELECT * FROM read_parquet('{glob}', hive_partitioning = false)"
         )
+    if modeling_dir is not None:
+        for view, rel in (("model_predictions", "experiments"), ("model_selected_predictions", "selected")):
+            path = modeling_dir / "predictions" / f"{rel}.parquet"
+            if path.exists():
+                con.execute(f"CREATE OR REPLACE VIEW {view} AS SELECT * FROM read_parquet('{_sql_path(path)}')")
     return con
 
 
