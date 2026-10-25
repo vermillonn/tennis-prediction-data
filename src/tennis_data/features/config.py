@@ -12,7 +12,7 @@ from tennis_data.config import PROJECT_ROOT, ConfigError
 from tennis_data.elo.config import EloConfig, load_elo_config
 
 DEFAULT_FEATURES_CONFIG = PROJECT_ROOT / "config" / "features.toml"
-FEATURE_ENGINE_VERSION = "1"
+FEATURE_ENGINE_VERSION = "2"  # 2: Kish ESS columns, monotone-safeguarded opponent fit
 
 
 @dataclass(frozen=True)

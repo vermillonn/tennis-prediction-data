@@ -55,6 +55,9 @@ a_spw_decay52w,46.333805,5.548593,3.47193
 a_rpw_decay52w,46.333805,5.548593,3.47193
 a_service_points_decay52w,0.0,0.0,0.0
 a_return_points_decay52w,0.0,0.0,0.0
+a_service_ess_decay52w,0.0,0.0,0.0
+a_return_ess_decay52w,0.0,0.0,0.0
+a_matches_ess_decay52w,0.0,0.0,0.0
 a_serve_strength,43.78983,0.289805,0.0
 a_return_strength,43.78983,0.289805,0.0
 a_serve_adjusted,43.78983,0.289805,0.0
@@ -63,6 +66,8 @@ a_surface_serve_adjusted,43.815652,0.289805,0.110641
 a_surface_return_adjusted,43.815652,0.289805,0.110641
 a_adjusted_serve_points_weighted,43.78983,0.289805,0.0
 a_adjusted_return_points_weighted,43.78983,0.289805,0.0
+a_adjusted_serve_ess,43.78983,0.289805,0.0
+a_adjusted_return_ess,43.78983,0.289805,0.0
 a_adjusted_in_fit,43.78983,0.289805,0.0
 b_has_stats_history,0.0,0.0,0.0
 b_stat_matches,0.0,0.0,0.0
@@ -110,6 +115,9 @@ b_spw_decay52w,46.338969,5.576791,3.454228
 b_rpw_decay52w,46.338969,5.576791,3.454228
 b_service_points_decay52w,0.0,0.0,0.0
 b_return_points_decay52w,0.0,0.0,0.0
+b_service_ess_decay52w,0.0,0.0,0.0
+b_return_ess_decay52w,0.0,0.0,0.0
+b_matches_ess_decay52w,0.0,0.0,0.0
 b_serve_strength,43.78983,0.289805,0.0
 b_return_strength,43.78983,0.289805,0.0
 b_serve_adjusted,43.78983,0.289805,0.0
@@ -118,6 +126,8 @@ b_surface_serve_adjusted,43.815652,0.289805,0.110641
 b_surface_return_adjusted,43.815652,0.289805,0.110641
 b_adjusted_serve_points_weighted,43.78983,0.289805,0.0
 b_adjusted_return_points_weighted,43.78983,0.289805,0.0
+b_adjusted_serve_ess,43.78983,0.289805,0.0
+b_adjusted_return_ess,43.78983,0.289805,0.0
 b_adjusted_in_fit,43.78983,0.289805,0.0
 spw_diff,43.78983,0.289805,0.0
 rpw_diff,43.78983,0.289805,0.0

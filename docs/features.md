@@ -180,8 +180,9 @@ logit P(server i wins a point against returner j on surface s) = mu_s + alpha_i 
 - **Face validity**, using fitted parameters only and no outcomes: the November 2015 fit ranks Karlovic,
   Federer, Raonic, Isner and Djokovic as the top servers, and Djokovic, Murray, Nadal, Ferrer and Federer as the
   top returners.
-- **Cost:** 429 fits take about 189 s in total on this machine (at most 1.3 s each, up to 197,726 observations),
-  about 2.5x the unsafeguarded 74 s, because of the extra objective evaluations of the descent safeguard.
+- **Cost:** 429 fits took 192 s in total in the final build on this machine (at most 1.34 s each, up to 197,726
+  observations). That is about 2.6x the unsafeguarded 74 s, because of the descent safeguard's extra objective
+  evaluations. A full feature build takes about 215-220 s with peak memory of about 1.4 GB.
 
 ### Differences
 
