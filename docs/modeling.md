@@ -99,7 +99,52 @@ stops if the audit fails.
 
 DuckDB views: `model_predictions` and `model_selected_predictions`.
 
-## 8. Known limitations
+## 8. Evidence tiers
+
+| tier | years | status | what it can support |
+|---|---|---|---|
+| development | 2002–2009 | used for every choice: C, candidate, calibration | the selection only; the Elo baseline (M0) was also tuned on 1991–2009, so it is favoured here |
+| exploratory | 2010–2026 | scored once, after `frozen_model.json` was written and hashed; Phase 2 had already reported on it | consistency checks, never decisions; it is not a final or independent test |
+| prospective | prediction batches after 2026-10-25 | not yet observed; protocol fixed in `exploratory_report.md` §9 | the only independent evaluation of the frozen model |
+
+No parameter, input, C or calibration method was changed after the exploratory numbers were seen.
+
+## 9. Selection decision: M4A versus M4B
+
+The pre-specified rule took the candidate with the lowest pooled development log loss. That was M4B
+(0.594852, 7 inputs). The rule then replaced it with the candidate with the fewest inputs within
+`simplicity_tolerance = 0.0005`. That was M4A (0.595120, 6 inputs, difference 0.00027). M4A's calibration
+followed the same rule. Temperature scaling (0.594663) was within 0.0005 of raw output, so the simpler `raw`
+was kept. The tolerance and the simplicity order were in `config/modeling.toml` before any result was
+computed.
+
+M4B was worse in development, but in the exploratory period it is better than M4A (ΔLL vs M0 −0.00715 against
+−0.00541). That observation **cannot** be used to switch models: doing so would select on the exploratory
+period. A future phase may register M4B (or a combination) as a new candidate. It would then need a new
+development protocol and a new prospective period. `tests/test_modeling_published.py` checks that the
+published selection follows the rule and that the configuration and code have not changed since the reports
+were generated.
+
+## 10. Open research questions
+
+These are documented limitations, not settled findings. Phase 3B made no correction for any of them.
+
+1. **Grand Slam underperformance.** M4A is worse than M0 on Grand Slams in development (ΔLL +0.0037,
+   95% CI [+0.0005, +0.0068]). In exploratory it is +0.0017 [−0.0001, +0.0035], inconclusive. M0R shows the
+   same pattern. A single slope on the Elo logit is shared across best-of-three and best-of-five matches, while
+   favourites win best-of-five more often. A format-specific slope or a format-aware Elo transform is untested.
+2. **Elo cold start.** 81% (development) and 54% (exploratory) of M4A's log-loss reduction comes from matches
+   where a player has fewer than 1,000 released service points. Many of these are Davis Cup matches or newly
+   arrived players, whom Elo starts at the initial rating. Part of the gain is therefore a correction of Elo's
+   initialisation, not information about serve/return skill. Between players with substantial history the
+   gain is −0.0015 [−0.0026, −0.0004] (development) and −0.0030 [−0.0038, −0.0023] (exploratory). Whether a
+   better Elo prior (for example, ranking-based initial ratings) would absorb most of the gain is open.
+3. **Dependence in the bootstrap intervals.** The intervals resample whole weekly batches. Tournament × year
+   and season blocks give similar intervals. No block scheme captures dependence through players who appear
+   in many weeks, so the intervals may be too narrow. Two-way (week × player) or player-cluster methods are
+   untested. Subgroup intervals are unadjusted. Only the comparisons with M0 have Bonferroni versions.
+
+## 11. Known limitations
 
 - The development years overlap the Phase 2 Elo tuning period (1991–2009), so M0 is optimistic there. 2010–2026
   was seen in Phase 2. Neither period is an independent test. Only the prospective protocol gives one.
