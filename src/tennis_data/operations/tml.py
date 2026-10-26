@@ -86,10 +86,22 @@ def _date(v: str) -> str | None:
         return None
 
 
-def convert(files: dict[str, bytes], level_map: dict, generated_at: str) -> tuple[dict, dict]:
+def convert(files: dict[str, bytes], level_map: dict, generated_at: str, provider: str = PROVIDER,
+            min_event_start: str | None = None) -> tuple[dict, dict]:  # fmt: skip
     """TML files (name → bytes; one player file plus match files) → exchange-format document and a conversion log.
 
     Deterministic: the same bytes and ``generated_at`` give the same document.
+
+    Event start date: Sackmann's ``tourney_date`` is the event start, the only date the frozen Phase 2 batching uses.
+    Some TML exports put each match's own date in that column instead (several dates per ``tourney_id``). The event
+    start is then the earliest date of the event's matches; on the January–May 2026 overlap this falls in the same
+    weekly batch as the archive's date for 28 of 29 non–Davis Cup events (United Cup starts on a Friday). Match
+    dates are not used otherwise (they are not timestamps), and the log lists every event with per-match dates.
+
+    ``min_event_start`` (ISO date) keeps only events starting on or after it. A backfill uses the events after the
+    pinned archive's last event: records inside the archive period are validation data, never imported, because
+    Phase 4A's duplicate detection matches tournaments by name and misses naming variants ("Monte Carlo" vs
+    "Monte Carlo Masters", Davis Cup ties with the teams in the other order).
     """
     ptxt, penc = decode(files[PLAYER_FILE])
     people = {r["id"]: r for r in csv.DictReader(io.StringIO(ptxt))}
@@ -99,10 +111,18 @@ def convert(files: dict[str, bytes], level_map: dict, generated_at: str) -> tupl
     tours: dict = {}
     matches: dict = {}
     used: set = set()
+    log["events_with_per_match_dates"] = []
     for name in sorted(n for n in files if n != PLAYER_FILE):
         txt, enc = decode(files[name])
         rows = list(csv.DictReader(io.StringIO(txt)))
         log["files"][name] = {"encoding": enc, "rows": len(rows)}
+        starts: dict = {}
+        for r in rows:
+            d = _date(r["tourney_date"])
+            if d is not None:
+                starts.setdefault(r["tourney_id"], set()).add(d)
+        multi = sorted(t for t, ds in starts.items() if len(ds) > 1)
+        log["events_with_per_match_dates"] += [f"{name}:{t}" for t in multi]
         for r in rows:
             start = _date(r["tourney_date"])
             if start is None:
@@ -113,6 +133,10 @@ def convert(files: dict[str, bytes], level_map: dict, generated_at: str) -> tupl
             if raw_level not in level_map:
                 log["unmapped_levels"][raw_level] = log["unmapped_levels"].get(raw_level, 0) + 1
             tid = r["tourney_id"]
+            start = min(starts[tid])  # event start (equals tourney_date when the file uses one date per event)
+            if min_event_start is not None and start < min_event_start:
+                log["excluded_before_min_event_start"] = log.get("excluded_before_min_event_start", 0) + 1
+                continue
             tours.setdefault(tid, {"id": tid, "name": r["tourney_name"], "level": level, "surface": r["surface"] or None,
                                    "draw_size": _int(r["draw_size"]), "start_date": start})  # fmt: skip
             w, lo = r["winner_id"], r["loser_id"]
@@ -147,7 +171,7 @@ def convert(files: dict[str, bytes], level_map: dict, generated_at: str) -> tupl
         players.append({"id": pid, "first_name": first or None, "last_name": last or first or None,
                         "country": p.get("ioc") or None, "birth_date": _date(p.get("birthdate") or ""),
                         "hand": p.get("hand") or None})  # fmt: skip
-    doc = {"schema": FIXTURE_FORMAT, "provider": PROVIDER, "generated_at": generated_at, "players": players,
+    doc = {"schema": FIXTURE_FORMAT, "provider": provider, "generated_at": generated_at, "players": players,
            "tournaments": [tours[k] for k in sorted(tours)], "matches": [matches[k] for k in sorted(matches)]}  # fmt: skip
     log["matches"], log["players"], log["tournaments"] = len(matches), len(players), len(tours)
     return doc, log
@@ -155,17 +179,19 @@ def convert(files: dict[str, bytes], level_map: dict, generated_at: str) -> tupl
 
 def convert_workspace(cfg) -> tuple[Path, dict]:
     """Convert the pinned download into ``converted.json`` (generated_at = latest retrieval time of the inputs)."""
-    d = cfg.workspace_dir / "tml" / cfg.tml["commit"]
+    d = Path(cfg.tml["source_dir"]) if cfg.tml.get("source_dir") else cfg.workspace_dir / "tml" / cfg.tml["commit"]
     manifest = json.loads((d / "manifest.json").read_text())
     files = {n: (d / n).read_bytes() for n in cfg.tml["files"]}
     for n, b in files.items():
         if hashlib.sha256(b).hexdigest() != manifest["files"][n]["sha256"]:
             raise RuntimeError(f"{n} differs from its recorded download hash")
     gen = max(manifest["files"][n]["retrieved_at"] for n in files)
-    doc, log = convert(files, cfg.tml["level_map"], gen)
-    out = d / "converted.json"
+    doc, log = convert(files, cfg.tml["level_map"], gen, cfg.tml.get("provider", PROVIDER),
+                       cfg.tml.get("min_event_start"))  # fmt: skip
+    out = cfg.workspace_dir / "converted.json" if cfg.tml.get("source_dir") else d / "converted.json"
+    out.parent.mkdir(parents=True, exist_ok=True)
     out.write_bytes(json.dumps(doc, sort_keys=True, ensure_ascii=False).encode("utf-8") + b"\n")
     log["converted_sha256"] = hashlib.sha256(out.read_bytes()).hexdigest()
     log["source_commit"] = cfg.tml["commit"]
-    (d / "conversion_log.json").write_text(json.dumps(log, indent=2, sort_keys=True) + "\n")
+    (out.parent / "conversion_log.json").write_text(json.dumps(log, indent=2, sort_keys=True) + "\n")
     return out, log

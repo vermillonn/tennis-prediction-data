@@ -76,7 +76,9 @@ def run(cfg, as_of: date, transport=access.urllib_transport, probe: bool = True,
         s = time.perf_counter()
         meta["tml_manifest"] = tml.download(cfg, transport)
         t["download"] = round(time.perf_counter() - s, 2)
-    tml_dir = cfg.workspace_dir / "tml" / cfg.tml["commit"]
+    tml_dir = (
+        Path(cfg.tml["source_dir"]) if cfg.tml.get("source_dir") else cfg.workspace_dir / "tml" / cfg.tml["commit"]
+    )
     if (tml_dir / "manifest.json").exists():
         s = time.perf_counter()
         conv_path, conv_log = tml.convert_workspace(cfg)

@@ -12,6 +12,8 @@ COMMANDS = {
     "ops-reports": "render reports/operations/*.md from the last ops-run",
     "ops-readiness": "print the readiness verdict of the last ops-run",
     "ops-benchmark": "benchmark conversion, identity, reconciliation, compatibility and schedule normalization",
+    "ops-register-export": "register owner-supplied files with provenance (role per file; nothing is imported)",
+    "ops-export-dry-run": "validate an owner export, cross-check it and simulate its backfill (no state change)",
 }
 
 
@@ -24,6 +26,23 @@ def register(sub) -> None:
             p.add_argument("--no-probe", action="store_true", help="reuse the last access audit")
             p.add_argument("--no-fetch", action="store_true", help="do not download; use files already stored")
             p.add_argument("--no-reports", action="store_true")
+        if name == "ops-register-export":
+            p.add_argument("--label", required=True)
+            p.add_argument("--provider", required=True, help="provider name for the converted records")
+            p.add_argument("--origin", required=True, help="where the owner obtained the files")
+            p.add_argument("--acquired-on", required=True, help="YYYY-MM-DD")
+            p.add_argument("--licence", default="not verified")
+            p.add_argument(
+                "--file",
+                action="append",
+                nargs=2,
+                metavar=("PATH", "ROLE"),
+                required=True,
+                help="file and role: tml_matches, tml_players, crosscheck_season, crosscheck_vbt, excluded",
+            )
+        if name == "ops-export-dry-run":
+            p.add_argument("--label", required=True)
+            p.add_argument("--as-of", required=True, help="YYYY-MM-DD")
 
 
 def run(args) -> int:
@@ -74,6 +93,26 @@ def run(args) -> int:
         r = load_results(cfg)[0]["readiness"]
         print(json.dumps({k: r[k] for k in ("verdict", "failing_required", "proposed_configuration_change")}, indent=2))
         return 0 if r["verdict"] == "READY_TO_PROPOSE_ACTIVATION" else 1
+    if cmd == "ops-register-export":
+        from pathlib import Path
+
+        from tennis_data.operations.exports import register
+
+        m = register(cfg, args.label, [(Path(f), r) for f, r in args.file], provider=args.provider, origin=args.origin,
+                     acquired_on=args.acquired_on, licence=args.licence)  # fmt: skip
+        print(json.dumps(m, indent=2))
+        return 0
+    if cmd == "ops-export-dry-run":
+        from tennis_data.operations.export_report import dry_run, render
+
+        out = dry_run(cfg, args.label, date.fromisoformat(args.as_of))
+        cfg.reports_dir.mkdir(parents=True, exist_ok=True)
+        path = cfg.reports_dir / f"owner_export_{args.label}.md"
+        path.write_text(render(out, cfg).rstrip("\n") + "\n")
+        print(json.dumps({"report": str(path), "simulated_validated": out["simulation"]["gap_validated"],
+                          "simulated_elo_updates": out["simulation"]["gap_elo_updates"],
+                          "dry_run_accepted": out["backfill_set"]["backfill"]["accepted_records"]}, indent=2))  # fmt: skip
+        return 0
     if cmd == "ops-benchmark":
         from tennis_data.operations.benchmark import run_benchmark
 

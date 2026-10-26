@@ -347,3 +347,115 @@ def test_late_tml_correction_is_quarantined_not_silently_applied(ops_world):
     res = pipeline.run(cfg, date(2020, 7, 1), probe=False, fetch=False)["results"]
     q = {x["reason"]: x["len"] for x in res["backfill"]["reconciliation_quarantine"]}
     assert q.get("version_reissued") == 2  # both contents quarantined; no source silently preferred
+
+
+# ------------------------------------------------------------------------------------------- owner exports
+
+
+def test_per_match_dates_become_event_starts_and_gap_filter():
+    rows = [_row("t1", "1", "R32", "A1", "B2", date_="20260524"), _row("t1", "2", "F", "A1", "C3", date_="20260607"),
+            _row("t2", "1", "R32", "A1", "B2", date_="20260608"), _row("t2", "2", "F", "B2", "C3", date_="20260614")]  # fmt: skip
+    players = [
+        ("A1", "Ann Ash", "19990101", "USA"),
+        ("B2", "Bo Bay", "19990202", "USA"),
+        ("C3", "Cy Cox", "19990303", "USA"),
+    ]
+    files = _tml_files(rows, players, player_encoding="utf-8")
+    doc, log = tml.convert(files, {"250": "A"}, "2026-06-20T00:00:00+00:00", provider="owner_x")
+    assert doc["provider"] == "owner_x" and sorted(log["events_with_per_match_dates"]) == ["2026.csv:t1", "2026.csv:t2"]
+    assert {t["id"]: t["start_date"] for t in doc["tournaments"]} == {"t1": "2026-05-24", "t2": "2026-06-08"}
+    gap, glog = tml.convert(files, {"250": "A"}, "2026-06-20T00:00:00+00:00", min_event_start="2026-05-26")
+    assert [t["id"] for t in gap["tournaments"]] == ["t2"] and len(gap["matches"]) == 2
+    assert glog["excluded_before_min_event_start"] == 2  # an event starting in the archive period is excluded whole
+
+
+def test_export_registration_records_provenance_and_never_overwrites(tmp_path):
+    from tennis_data.operations import exports
+
+    cfg = _cfg_ops(workspace_dir=tmp_path / "ops")
+    files = _tml_files(
+        [_row("t1", "1", "R32", "A1", "B2")], [("A1", "Ann Ash", "", "USA"), ("B2", "Bo Bay", "", "USA")]
+    )
+    paths = {}
+    for n, b in files.items():
+        paths[n] = tmp_path / f"0a1b2c3d-{n}"
+        paths[n].write_bytes(b)
+    (tmp_path / "ch.csv").write_text("x\n")
+    man = exports.register(cfg, "lab", [(paths["2026.csv"], "tml_matches"), (paths[tml.PLAYER_FILE], "tml_players"),
+                                         (tmp_path / "ch.csv", "excluded")], provider="owner_x", origin="owner upload",
+                           acquired_on="2026-10-26")  # fmt: skip
+    assert man["licence_status"] == "not verified" and {f["stored_as"] for f in man["files"]} == {
+        "2026.csv",
+        tml.PLAYER_FILE,
+        "ch.csv",
+    }  # upload prefix removed
+    ecfg = exports.export_config(cfg, "lab", gap_only=True)
+    assert ecfg.tml["files"] == ["2026.csv", tml.PLAYER_FILE] and ecfg.tml["provider"] == "owner_x"
+    assert ecfg.tml["min_event_start"] == "2026-05-26" and ecfg.workspace_dir.name == "workspace_gap"
+    paths["2026.csv"].write_bytes(files["2026.csv"] + b"\n")
+    with pytest.raises(FileExistsError):
+        exports.register(cfg, "lab", [(paths["2026.csv"], "tml_matches")], provider="owner_x", origin="o",
+                         acquired_on="2026-10-26")  # fmt: skip
+    with pytest.raises(ValueError):
+        exports.register(cfg, "lab", [(tmp_path / "ch.csv", "import_everything")], provider="x", origin="o",
+                         acquired_on="2026-10-26")  # fmt: skip
+
+
+def test_crosscheck_corroboration_and_completeness():
+    from datetime import timedelta
+
+    from tennis_data.operations import crosscheck
+
+    d0 = date(2026, 6, 1)
+
+    def rec(w, lo, d=d0, **kw):
+        return {"date": d, "tid": "t", "tournament": "T", "level": "A", "round": "R32", "draw_size": 4,
+                "w": frozenset(w.split()), "l": frozenset(lo.split()), "score": "6-4 6-4", "status": ""} | kw  # fmt: skip
+
+    tml_rows = [rec("ann ash", "bo bay"), rec("cy cox", "di dee"), rec("ann ash", "cy cox", round="F"),
+                rec("eve eng", "fay fox", d=d0 - timedelta(days=30), tid="early")]  # before the window  # fmt: skip
+    other = [rec("ash", "bay", d=d0 + timedelta(days=1)), rec("dee", "cox"), rec("zed zulu", "yan yu")]
+    r = crosscheck.corroborate(tml_rows, other, d0)
+    assert r["accounting"] == {"tml_records": 3, "matched": 2, "winner_agrees": 1, "winner_differs": 1,
+                               "no_counterpart": 1}  # fmt: skip
+    assert r["unmatched_source_rows_by_tournament"] == {"T": 1}
+    ev = crosscheck.completeness(tml_rows, d0)
+    assert ev[0]["expected_matches"] == 3 and ev[0]["matches"] == 3 and ev[0]["status"] == "complete"
+    assert crosscheck.completeness(tml_rows[:2], d0)[0]["status"] == "INCOMPLETE"
+
+
+def test_identity_proposal_file_is_pending_and_excludes_contradicted(tmp_path):
+    from tennis_data.operations.backfill_plan import write_proposal
+
+    prop = {"proposed": [
+        {"provider": "p", "provider_player_id": "A", "canonical_player_id": 1, "provider_name": "Ann", "archive_name": "Ann",
+         "birth_date": "1999-01-01", "evidence_class": "x", "overlap_matches_confirming": 3, "overlap_matches_contradicting": 0},
+        {"provider": "p", "provider_player_id": "B", "canonical_player_id": 2, "provider_name": "Bo", "archive_name": "Bob",
+         "birth_date": "1999-01-02", "evidence_class": "x", "overlap_matches_confirming": 1, "overlap_matches_contradicting": 1}]}  # fmt: skip
+    path = tmp_path / "proposed.toml"
+    write_proposal(path, prop)
+    d = tomllib.loads(path.read_text())
+    assert [m["provider_player_id"] for m in d["mapping"]] == ["A"] and d["mapping"][0]["reviewer"] == "PENDING"
+    assert "NOT APPLIED" in path.read_text()
+
+
+def test_simulation_never_touches_production_state(ops_world):
+    from tennis_data.operations import backfill_plan, pipeline
+
+    tmp, pcfg = ops_world
+    cfg = _ops_cfg(tmp, pcfg, "sim")
+    _store_tml(cfg, _tml_files(GAP_ROWS, TML_PLAYERS))
+    dry = pipeline.run(cfg, date(2020, 7, 1), probe=False, fetch=False)["results"]
+    assert dry["backfill"]["accepted_records"] == 0  # nothing approved
+    before_overrides = pcfg.overrides_path.read_text()
+    prod = pcfg.prospective_dir
+    before = sorted(p.relative_to(prod).as_posix() for p in prod.rglob("*")) if prod.exists() else []
+    proposal = cfg.workspace_dir / "proposed.toml"
+    proposal.write_text("".join(f'[[mapping]]\nprovider = "tml_github"\nprovider_player_id = "{c}"\ncanonical_player_id '
+                                f'= {cid}\nreviewer = "PENDING"\nnote = "t"\n\n' for c, cid in (("TA", 100), ("TB", 200),
+                                                                                                 ("TC", 300), ("TD", 400))))  # fmt: skip
+    sim = backfill_plan.simulate(cfg, proposal, cfg.workspace_dir / "sandbox")
+    assert sim["gap_validated"] == 3 and sim["deterministic_rerun"] and sim["gap_stats_eligible"] == 0
+    assert "SIMULATION" in sim["label"] and pcfg.overrides_path.read_text() == before_overrides
+    after = sorted(p.relative_to(prod).as_posix() for p in prod.rglob("*")) if prod.exists() else []
+    assert after == before
