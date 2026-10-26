@@ -15,7 +15,7 @@ number below was measured, not estimated. The other Markdown files in this direc
 
 ## 1. Automated tests
 
-**441 passed: 386 existing, plus 55 Phase 4C.** They also pass with `data/` hidden, as in CI.
+**446 passed: 386 existing, plus 60 Phase 4C** (55 at the first review, 5 regression tests added for PR preparation). They also pass with `data/` hidden, as in CI.
 
 | file | tests | covers |
 |---|---|---|
@@ -23,6 +23,7 @@ number below was measured, not estimated. The other Markdown files in this direc
 | `test_eval_eligibility.py` | 12 | pre-start PROSPECTIVE forecast is operational, not primary, without a timestamp; primary cohort needs a trusted timestamp; a timestamp after the actual start proves nothing; SYNTHETIC/HISTORICAL_REPLAY never enter the prospective cohort; the real gate refuses PROSPECTIVE commits; late commitment; missing actual start; pending outcome kept in cohort; earliest actual-start source wins; selection is the first admissible forecast, never the best; a voided selection is not replaced; postponed (scheduled start not rewritten), cancelled, players changed; unapproved model; cutoff; readiness failure |
 | `test_eval_outcomes_metrics.py` | 17 | completed, retired, walkover, default, abandoned, unknown kept apart; pending, cancelled, cancelled-with-result disputed, identity mismatch; conflicting sources quarantined, resolved only by a newer version, reissued versions, score-status contradiction; result correction history; outcome-snapshot validation; log loss, Brier and accuracy against hand calculation and the shared scorer; same clipping for both models; calibration bins; paired differences; deterministic bootstrap; small-sample gate; small subgroups counts-only; protocol guards; retirements secondary only |
 | `test_eval_audit.py` | 13 | evaluation never mutates the ledger, the frozen M4A fixtures or the evidence; snapshot change detected; byte-identical packages from identical inputs, no overwrite; valid package verifies against an independent manifest hash; tampered packages fail (corrupted export, altered outcome snapshot, altered report, altered results, unlisted file, dropped receipt), each at the right check; package with timestamp evidence (and verification under other trust anchors, token removal); CLI end to end (no-ledger run, demo, verify, calibration, exclusions, checkpoint export, fixture publication and verification, disabled GitHub backend refused, tampered package refused); demo protocol is never PROSPECTIVE |
+| `test_eval_regressions.py` | 5 | contradictory anchors (two checkpoints for one sequence: fork, everything INVALID_EVIDENCE); revoked GitHub publication (the commit itself gone: LOCAL_ONLY); RFC 3161 trust withdrawn by the verifier, `openssl` unavailable, token bytes altered (INVALID), unreadable token (all fail closed); selection invariance: postponement, actual start, result, correction, a void of another forecast and a conflicting outcome snapshot never change the selected forecast at any cutoff, and the committed schedule is never rewritten; committed reports and configuration claim no prospective evidence (live report 0, synthetic reports bannered, remote publishers disabled, gates INCOMPLETE/DISABLED) |
 
 Tests use synthetic fixtures and deterministic clocks only. PROSPECTIVE fixture records are written through the real
 `LedgerWriter`, using a *test-only* enabled gate and a deterministic clock flagged as trusted. The repository gate is
@@ -146,3 +147,18 @@ The peak Python allocation is 137 MB.
 - Uncertainty intervals ignore dependence through recurring players.
 - The tournament-level subgroup depends on outcome snapshots supplying `tournament_level`.
 - A whole-package forgery is detectable only against an independently published manifest hash.
+
+## 9. Final verification for the pull request (2026-10-26)
+
+- Fail-closed trust classification is covered for invalid, contradictory, revoked, missing and unverifiable
+  checkpoint and timestamp evidence. Five narrow regression tests (`test_eval_regressions.py`) were added for the
+  remaining gaps. None required a code change: they confirm existing behaviour.
+- Forecast selection is invariant to later events at every evaluation cutoff. The frozen `first_admissible_in_slot`
+  protocol is unchanged.
+- Reproducibility after the regression tests: the live and demonstration packages were rebuilt from scratch. Every
+  input, `results.json` and table is byte-identical to the original packages. The reports differ only in the
+  provenance line naming the git commit that ran (`9b0b375` versus `9d025a4`). The committed reports are byte-identical
+  to the original package's reports.
+- 446 tests pass with and without `data/`. The 226 `data/` output files are unchanged. The frozen hash is
+  `bc4e5c870c6e21b9` and the configuration hash `5e72010100065889`. External publication is disabled and the gates
+  are INCOMPLETE / DISABLED.
