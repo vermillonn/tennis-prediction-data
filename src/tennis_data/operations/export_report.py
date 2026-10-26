@@ -9,9 +9,10 @@ from __future__ import annotations
 
 import json
 import shutil
+from collections import Counter
 from datetime import date
 
-from tennis_data.operations import backfill_plan, crosscheck, exports, pipeline
+from tennis_data.operations import backfill_plan, chronology_audit, crosscheck, exports, pipeline
 
 
 def dry_run(cfg, label: str, as_of: date) -> dict:
@@ -34,6 +35,13 @@ def dry_run(cfg, label: str, as_of: date) -> dict:
             cross["vbt"] = crosscheck.corroborate(
                 tml, crosscheck.vbt_records((d / "files" / f["stored_as"]).read_bytes()), since
             )
+    if "vbt" in cross and "season" in cross:  # do the disagreeing matches have a counterpart in the third source?
+        keys = {(x["date"], x["round"], x["tml_score"]) for x in cross["vbt"]["winner_disagreements"]}
+        sub = [t for t in tml if (str(t["date"]), t["round"], t["score"]) in keys]
+        season_file = next(f["stored_as"] for f in man["files"] if f["role"] == "crosscheck_season")
+        cross["vbt_disagreements_in_season"] = crosscheck.corroborate(
+            sub, crosscheck.season_records((d / "files" / season_file).read_bytes()), since
+        )["accounting"]
     events = [e for e in crosscheck.completeness(tml, since) if e["start"] > since.isoformat()]
     fprop = backfill_plan.identity_proposal(full)
     gprop = backfill_plan.identity_proposal(gap)
@@ -53,7 +61,8 @@ def dry_run(cfg, label: str, as_of: date) -> dict:
     sim = backfill_plan.simulate(gap, d / "identity_overrides.proposed.toml", d / "simulation")
     recon = d / "simulation_state_reconstruction.json"
     vdup = d / "validation_duplicate_check.json"
-    out = {"label": label, "as_of": as_of.isoformat(), "manifest": man, "validation_set": a, "backfill_set": g,
+    chron = chronology_audit.audit(full, gap, d, as_of)
+    out = {"label": label, "chronology_audit": chron, "as_of": as_of.isoformat(), "manifest": man, "validation_set": a, "backfill_set": g,
            "crosscheck": cross, "events": events,
            "identity_proposal": {k: v for k, v in gprop.items() if k != "proposed"},
            "review_queue": g["identity"]["review_queue"], "simulation": sim,
@@ -86,10 +95,9 @@ def render(out: dict, cfg) -> str:
     L += ["", "## 2. Semantics of the primary file (`2026.csv`)", "",
           "- Same layout and identifiers as TML (Sackmann columns, ATP player codes, `ATP_Database.csv` player file, "
           "UTF-8); converted by the Phase 5A TML converter.",
-          f"- **`tourney_date` holds each match's own date, not the event start** ({conv['events_with_per_match_dates']} "
-          "events have several dates). The frozen batching needs event starts, so the event start is the earliest match "
-          "date of the event: same weekly batch as the archive for 28 of 29 overlapping non–Davis Cup events (United "
-          "Cup starts on a Friday). Davis Cup ties are dated inconsistently in the archive itself.",
+          f"- **`tourney_date` holds each match's own date, not the event start** ({len(conv['events_with_per_match_dates'])} "
+          "events of the backfill set have several dates). The frozen batching needs event starts, so the event start "
+          "is the earliest match date of the event (checked in §9).",
           "- The \"1,360 records from tournaments beginning May 25 onward\" are 108 Roland Garros 2026 matches (an event "
           f"the archive already holds completely, 127 matches) plus **{conv['matches']:,} records of {conv['tournaments']} "
           "events starting after the archive** (the backfill set).",
@@ -140,11 +148,13 @@ def render(out: dict, cfg) -> str:
                      f"(same players, match dates within a day); winner agrees in {ac.get('winner_agrees', 0):,}, differs "
                      f"in {ac.get('winner_differs', 0)}.")  # fmt: skip
     dis = out["crosscheck"].get("vbt", {}).get("winner_disagreements", [])
+    third = out["crosscheck"].get("vbt_disagreements_in_season", {})
     if dis:
         L.append(
-            "- ValueBetTennis winner disagreements (all retirements; the season file agrees with TML on each): "
+            f"- ValueBetTennis winner disagreements ({len(dis)}, all retirements): "
             + "; ".join(f"{x['tournament']} {x['round']} {x['date']} TML `{x['tml_score']}`" for x in dis)
-            + "."
+            + f". The season file has {third.get('matched', 0)} of them and agrees with TML on "
+            f"{third.get('winner_agrees', 0)}; {third.get('no_counterpart', 0)} has no counterpart there."
         )
     L += ["- Rows in the other sources without a TML counterpart are qualifying draws (e.g. 112 per Grand Slam, 12 per "
           "250 event), plus Vienna and Basel, which started on 2026-10-26 and are still being played. No completed "
@@ -196,14 +206,21 @@ def render(out: dict, cfg) -> str:
               + f": deterministic **{ss['deterministic']}**. Elo and feature configuration hashes "
               f"`{ss['runs'][0]['elo_configuration_hash']}` / `{ss['runs'][0]['feature_configuration_hash']}` (unchanged "
               "engines)."]  # fmt: skip
-    L += ["", "## 9. Remaining gaps after an approved backfill", "",
+    L += _chronology(out["chronology_audit"])
+    ca = out["chronology_audit"]
+    L += ["", "## 11. Remaining gaps after an approved backfill", "",
           f"- {sim['quarantine_by_reason'].get('identity_unresolved', 0)} matches involving ambiguous players stay out "
           "until those identities are reviewed.",
           "- Serve/return state stays at the archive's end (Roland Garros 2026): the Phase 4A freshness check "
           "`last_point_statistics` fails for any upcoming match, which blocks prospective predictions by itself.",
           "- Vienna and Basel (week of 2026-10-26) are in progress; no ongoing feed exists for later weeks.",
-          "- Schedules, actual start times and an RFC 3161 timestamp authority are still missing (readiness_report.md).", "",
-          "## 10. Actions requiring owner approval", "",
+          "- Schedules, actual start times and an RFC 3161 timestamp authority are still missing (readiness_report.md).",
+          f"- Under the frozen weekly batching, {ca['gap_release']['played_on_or_after_release']} backfilled results "
+          "enter player state on or before the day the match was played (§9.3); kept as is, pending the owner's "
+          "decision.",
+          "- Phase 4A tournament matching by exact name misses renamed events and reversed Davis Cup ties (§3); the "
+          "backfill set avoids it by excluding the archive period.", "",
+          "## 12. Actions requiring owner approval", "",
           "1. Confirm the licence of each file for research use (status recorded as *not verified*).",
           "2. Review `identity_overrides.proposed.toml` and the review queue above; copy approved mappings, with your "
           "name as reviewer, into `config/identity_overrides.toml`.",
@@ -211,5 +228,110 @@ def render(out: dict, cfg) -> str:
           "converted.json --format tennis-fixture-provider-1`, then `tennis-data prospective-backfill`, with a baseline "
           "copy of `data/prospective/` kept first.",
           "4. Decide whether serve statistics may ever be used per event (a protocol change made before looking at gap "
-          "statistics); until then the backfill is results-only.", ""]  # fmt: skip
+          "statistics); until then the backfill is results-only.",
+          "5. Decide whether the frozen weekly release of late-round results (§9.3) is acceptable for the backfill as it "
+          "is for the archive, or whether a reviewed, conservative release rule for rows with known match dates is "
+          "wanted (a chronology change: it would make the backfill differ from the archive's treatment).", ""]  # fmt: skip
     return "\n".join(L)
+
+
+def _chronology(ca: dict) -> list[str]:
+    om, orl, gr, rg = ca["overlap_mapping"], ca["overlap_release"], ca["gap_release"], ca["roland_garros"]
+    pd = ca["archive_2025_dating"]
+    uc25 = [e for e in pd["events"] if "united cup" in e["tournament"].lower()]
+    uc26 = [e for e in ca["overlap_events"] if "united cup" in e["tournament"].lower()]
+
+    def rule(r):
+        draw = f" with draw ≥ {r['min_draw_size']}" if r["min_draw_size"] else ""
+        return f"{'/'.join(r['levels'])}{draw}: {r['weeks']} weeks"
+
+    mw = "; ".join(rule(r) for r in ca["chronology"]["multi_week"])
+    L = ["", "## 9. Chronology under the frozen weekly batching (unchanged)", "",
+         f"Policy (`config/elo.toml`): batches start on {ca['chronology']['week_start'].capitalize()} 00:00 UTC; the "
+         "prediction batch is the batch containing the event start; multi-week events release their results at the "
+         f"close of their last batch ({mw}); a result enters player state at 00:00 UTC on the Saturday after its release "
+         "batch. Nothing below changes the policy, any event's level or any eligibility rule.", "",
+         "### 9.1 Earliest-match-date mapping versus the archive", "",
+         f"On the January–May overlap, pairs from the duplicate detection give each TML event's batch next to the "
+         f"archive event's batch. Individual events: **{om['same_batch']} of {om['events']} in the same batch** and "
+         f"{om['same_release']} of {om['events']} with the same release. The archive's own 2025 dates follow the same "
+         "convention, the first main-draw day ("
+         + ", ".join(f"{e['tournament']} {e['date']} ({e['weekday']})" for e in pd["events"]
+                     if "united cup" not in e["tournament"].lower())
+         + "), so the mapping reproduces the archive's dating rather than introducing a new one.", "",
+         "### 9.2 Exceptions: United Cup and Davis Cup", "",
+         f"Team events: {om['team_same_batch']} of {om['team_events']} in the same batch.", ""]  # fmt: skip
+    team = [e for e in ca["overlap_events"] if e["level"] == "D" or "united cup" in e["tournament"].lower()]
+    L += _t(["event", "TML start", "TML batch", "archive batch(es)", "matches", "same batch"],
+            [[e["tournament"], f"{e['tml_start']} ({e['tml_start_weekday']})", e["tml_batch"],
+              ", ".join(e["archive_batches"]), e["matches"], "yes" if e["same_batch"] else "**no**"] for e in team])  # fmt: skip
+    gdc = [e for e in ca["gap_events"] if e["level"] == "D"]
+    wd = dict(sorted(Counter(e["start_weekday"] for e in gdc).items()))
+    L += [""]
+    if uc26:
+        u = uc26[0]
+        L.append(f"- **United Cup** (overlap only; no United Cup in the gap): TML's first match is on "
+                 f"{u['tml_start_weekday']} {u['tml_start']}, batch {u['tml_batch']}; the archive's 2026 event is in batch "
+                 f"{', '.join(u['archive_batches'])}. The archive dated United Cup 2025 "
+                 + (f"on {uc25[0]['date']} ({uc25[0]['weekday']})" if uc25 else "(not found)")
+                 + ", i.e. by its first day, so the archive is itself inconsistent across seasons. The overlap is "
+                 "validation data only and is never imported: no historical chronology changes.")  # fmt: skip
+    dcw = pd["davis_cup_rubbers_by_weekday"]
+    L += ["- **Davis Cup**: the archive dates ties on different weekdays (2025 rubbers by tournament-date weekday: "
+          + ", ".join(f"{k} {v}" for k, v in dcw.items()) + "), which explains the split above. TML dates each tie by "
+          "its first rubber. In the gap, "
+          f"{len(gdc)} ties start on " + ", ".join(f"{k} ({v})" for k, v in wd.items()) + "; Davis Cup is level D, a "
+          "one-week event with Elo updates under the unchanged eligibility rules. No tie is moved, merged or "
+          "re-levelled.", "",
+          "### 9.3 Release into player state: never before the release batch closes", "",
+          f"- Every backfilled match has a release batch from the frozen rule; none has a date before its prediction "
+          f"batch ({gr['before_prediction_batch']}), and all {gr['matches']:,} enter state on or before "
+          f"{gr['latest_eligible']} (none after the as-of date: {gr['eligible_after_as_of']}; no match played after it: "
+          f"{gr['played_after_as_of']}). Production state is not touched (dry run).",
+          "- The weekly policy approximates: a result is applied at the batch close even if the match was played over "
+          "the following weekend. Using the per-match dates of the file for the first time: "
+          f"**{gr['played_on_or_after_release']} of {gr['matches']:,} gap matches** were played on or after the Saturday "
+          "their result enters state (days after: " + ", ".join(f"{k}: {v}" for k, v in gr["by_days_after"].items())
+          + "; by level " + ", ".join(f"{k} {v}" for k, v in gr["by_level"].items()) + "; by round "
+          + ", ".join(f"{k} {v}" for k, v in gr["by_round"].items()) + ").",
+          f"- The same measure on the overlap with the **archive's own dates**: "
+          f"{orl['archive_dating']['played_on_or_after_release']} of {orl['archive_dating']['matches']:,} "
+          "(days after: " + ", ".join(f"{k}: {v}" for k, v in orl["archive_dating"]["by_days_after"].items())
+          + "). It is a property of the frozen policy already present in every Elo and feature state built from the "
+          "archive, not an effect of the mapping. The gap share is higher because of the Wednesday-start Asian "
+          "events, Laver Cup and Davis Cup Friday ties, which the archive dates the same way in 2025.",
+          "- It is **reported, not corrected**: changing it would make the backfill's chronology differ from the "
+          "archive's. It needs an owner decision (§12).", "", "Per event (gap):", ""]  # fmt: skip
+    L += _t(["start", "event", "lvl", "batch", "weeks", "enters state", "last match", "played on/after", "rounds"],
+            [[f"{e['start']} ({e['start_weekday']})", e["tournament"], e["level"], e["batch"], e["weeks"],
+              e["enters_state"], e["last_match"], e["played_on_or_after"], e["rounds_on_or_after"] or "-"]
+             for e in ca["gap_events"] if e["level"] != "D"])  # fmt: skip
+    L += ["", f"Davis Cup ties (gap): {sum(e['played_on_or_after'] for e in gdc)} of {sum(e['matches'] for e in gdc)} "
+          "rubbers played on or after their release Saturday.", "",
+          "### 9.4 Roland Garros 2026 (archived; different date conventions)", "",
+          f"- TML: tournament `{', '.join(rg['tml_tids'])}`, first match {', '.join(rg['tml_start'])}, "
+          f"{rg['tml_records']} records. Archive: `{', '.join(rg['archive_tids'])}`, tournament date "
+          f"{', '.join(rg['archive_tournament_date'])}, {rg['archive_matches']} matches. Both dates fall in the same "
+          "batch.",
+          f"- Full-file validation import: **{rg['recognised_duplicates']} recognised as duplicates**, all of them "
+          f"pointing to archive Roland Garros matches ({rg['duplicates_pointing_to_archive_rg']}); held "
+          + (", ".join(f"{k} {v}" for k, v in rg["quarantined"].items()) or "0") + f"; accepted as new: "
+          f"**{rg['accepted_as_new_in_validation']}**. The held records involve unapproved players: they are not "
+          "proven duplicates, but they cannot enter the state either.",
+          f"- Backfill set: **{rg['in_backfill_set']}** Roland Garros records (the event starts before the gap). The "
+          "earlier cross-check counted 108 because it filters by match date (≥ 2026-05-25); the event has 127.", "",
+          "## 10. Coverage by frozen batch (gap, SIMULATION)", "",
+          f"Archive ends with tournament date {ca['archive_last_tournament_date']}. Batches are labelled by their "
+          "Saturday; a batch without events is a calendar gap (e.g. second Grand Slam or Masters week), not missing "
+          "data.", ""]  # fmt: skip
+    L += _t(["batch", "events", "records", "validated", "held", "Elo updates"],
+            [[w["batch"], w["events"], w["records"], w["validated"], w["held"], w["elo_updates"]]
+             for w in ca["coverage_by_week"]])  # fmt: skip
+    tot = {
+        k: sum(w[k] for w in ca["coverage_by_week"]) for k in ("events", "records", "validated", "held", "elo_updates")
+    }
+    L += [
+        f"| **total** | {tot['events']} | {tot['records']:,} | {tot['validated']:,} | {tot['held']} | "
+        f"{tot['elo_updates']:,} |"
+    ]
+    return L

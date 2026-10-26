@@ -212,3 +212,23 @@ Neither is enabled. The TSA host must also be allowed by the environment's netwo
 | `tennis-data ops-reports` | re-render the reports from the last run |
 | `tennis-data ops-readiness` | readiness verdict (exit code 1 while not ready) |
 | `tennis-data ops-benchmark` | performance of conversion, identity, reconciliation, compatibility, schedule normalization |
+| `tennis-data ops-register-export` | register owner-supplied files with SHA-256, origin, acquisition date and licence status |
+| `tennis-data ops-export-dry-run --label L --as-of DATE` | validate, cross-check, audit chronology and simulate an owner export's backfill (no state change) |
+
+## 13. Owner-supplied exports
+
+Report: `reports/operations/owner_export_<label>.md`. Raw files stay git-ignored under
+`data/operations/exports/<label>/`; licence status stays *not verified* until the owner confirms it.
+
+- **Two sets.** The whole file is the *validation set* (overlap with the archive: identity, outcomes, statistics,
+  duplicate detection). Only events starting after the archive's last event week form the *backfill set*, because
+  Phase 4A's exact-name tournament matching misses renamed events and reversed Davis Cup ties.
+- **Per-match dates.** When `tourney_date` varies within an event, the event start is its earliest match date. The
+  chronology audit (`operations/chronology_audit.py`) checks this against the frozen Saturday batching: same batch as
+  the archive event for every overlapping individual event; United Cup and Davis Cup are listed separately because the
+  archive itself dates them inconsistently. No date, level or eligibility rule is changed.
+- **Release timing.** The audit compares each match's own date with the Saturday its result enters state. Late-round
+  weekend matches are released at or before that day under the frozen weekly policy; the archive shows the same
+  property, and changing it for backfilled rows would be a chronology change that needs the owner's decision.
+- **Simulation.** With the proposed identity mappings treated as approved, the unchanged Phase 4A backfill runs in a
+  sandbox copy; its results are labelled SIMULATION. The production backfill needs the owner's approved mappings.

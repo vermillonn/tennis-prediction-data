@@ -459,3 +459,18 @@ def test_simulation_never_touches_production_state(ops_world):
     assert "SIMULATION" in sim["label"] and pcfg.overrides_path.read_text() == before_overrides
     after = sorted(p.relative_to(prod).as_posix() for p in prod.rglob("*")) if prod.exists() else []
     assert after == before
+
+
+def test_chronology_audit_match_dates_and_release_lags():
+    from datetime import date
+
+    from tennis_data.operations import chronology_audit as ca
+
+    head = "tourney_id,tourney_date,match_num,round,winner_id,loser_id\n"
+    files = {"ATP_Database.csv": b"id,player\n",
+             "2026.csv": (head + "T1,20260610,1,R32,A,B\nT1,20260614,,F,C,A\nT1,20260614,2,R32,,B\n").encode()}  # fmt: skip
+    dates = ca.tml_match_dates(files)
+    # keys match the converter's (match_num, else the derived round/pair key); a row without a player is skipped
+    assert dates == {"T1:1": date(2026, 6, 10), "T1:F:A-C": date(2026, 6, 14)}
+    lags = ca._lags([date(2026, 6, 12), date(2026, 6, 13), date(2026, 6, 14)], [date(2026, 6, 13)] * 3)
+    assert lags == {"matches": 3, "played_on_or_after_release": 2, "by_days_after": {"0": 1, "1": 1}}
