@@ -118,7 +118,8 @@ lifecycle.
 
 ## 8. Remaining limitations
 
-1. No external checkpoint has been published and no trusted timestamping is configured. A full local rewrite cannot
+1. No external checkpoint has been published and no trusted timestamping is configured. The local hash chain alone
+   cannot prove when an event was created; it shows order and integrity relative to a trusted head only. A full local rewrite cannot
    be detected without one.
 2. The commit time is the host's system clock. Strong evidence of time needs an external timestamp.
 3. Prospective commitments are refused (gate DISABLED, backfill INCOMPLETE), so the PROSPECTIVE path has been tested

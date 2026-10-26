@@ -1,7 +1,9 @@
 # Ledger threat model (Phase 4B)
 
 The ledger aims to make ordinary records immutable, unauthorized modification detectable, and checkpointed history
-verifiable. It does **not** claim to stop a privileged attacker. A local hash chain alone is **not** independently
+verifiable. It does **not** claim to stop a privileged attacker. The local hash chain alone cannot prove when an event
+was created. It fixes the order and content of events relative to a trusted head hash, but `recorded_at` comes from
+the host clock, and a party with write access could rebuild the chain with other times. A local hash chain alone is **not** independently
 immutable.
 
 | actor or situation | what can happen | protection | remaining risk |

@@ -13,7 +13,9 @@ immutable and unauthorized modification detectable. It does **not** make tamperi
 
 **Status:** prospective predictions are **DISABLED** and the May–October 2026 backfill is **INCOMPLETE**
 (`config/prospective.toml [status]`). The ledger refuses every PROSPECTIVE commitment until a reviewed change enables
-the gate. **No external checkpoint has been published.**
+the gate. **No external checkpoint has been published.** The local hash chain alone cannot prove *when* an event was
+created: it proves order and integrity relative to a trusted head, while `recorded_at` is only the host clock's
+statement. Proof of time needs checkpoints anchored by an independent trusted timestamp.
 
 ```bash
 uv run tennis-data ledger-init
