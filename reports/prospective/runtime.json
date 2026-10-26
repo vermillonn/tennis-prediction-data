@@ -1,15 +1,15 @@
 {
-  "git_commit": "edc49d8ce1deba4c63f501539200e962239bf206+dirty",
-  "peak_rss_mb": 2389.5,
+  "git_commit": "480596aa8ef80d9da49dce954f4e79d9036cb1a7+dirty",
+  "peak_rss_mb": 2388.7,
   "replay_cases": 274,
-  "replay_state_seconds": 216.0,
-  "report_written_at": "2026-10-25T22:26:02.300589+00:00",
-  "run_at": "2026-10-25T22:26:01.819411+00:00",
+  "replay_state_seconds": 218.9,
+  "report_written_at": "2026-10-26T11:02:27.764620+00:00",
+  "run_at": "2026-10-26T11:02:27.283593+00:00",
   "seconds": {
     "audit": 0.2,
-    "backfill": 3.1,
+    "backfill": 4.0,
     "freshness": 0.0,
-    "replay": 217.2,
-    "total": 222.4
+    "replay": 220.2,
+    "total": 226.6
   }
 }

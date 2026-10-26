@@ -6,6 +6,8 @@ Derived from Jeff Sackmann's ATP data (CC BY-NC-SA 4.0); aggregate statistics on
 
 **Ready for genuine prospective predictions: NO.**
 
+Status: historical backfill **INCOMPLETE** · prospective predictions **DISABLED** · real-provider integrations **UNVERIFIED** (gate: `config/prospective.toml` `[status]`).
+
 | component | status |
 |---|---|
 | frozen model integrity | pass |
@@ -13,12 +15,14 @@ Derived from Jeff Sackmann's ATP data (CC BY-NC-SA 4.0); aggregate statistics on
 | state reconstruction (Phase 2 + 3A outputs reproduced) | pass |
 | historical backfill complete to the prospective start | **not met** |
 | live schedule and result provider verified | **not met** |
+| status gate: backfill INCOMPLETE, prospective predictions DISABLED | **not met** |
 
 Blockers:
 
 - historical gap not filled: 22 weekly batches (2026-05-30 to 2026-10-24) have no results; no authorized source was accessible
 - feature freshness fails for a match after the prospective start: last_eligible_result, last_point_statistics, missing_backfill_weeks
 - no verified live provider: schedules for upcoming matches cannot be ingested automatically
+- status gate: backfill INCOMPLETE, prospective predictions DISABLED (config/prospective.toml [status])
 
 The inference machinery is verified; the data it needs is not available. M4A must not be used for prospective forecasts until the backfill reaches the prediction date and a verified provider supplies schedules.
 

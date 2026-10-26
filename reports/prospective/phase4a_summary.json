@@ -281,22 +281,24 @@
       "validated": 1449
     }
   },
-  "code_hash": "eb6705674c255cf9",
+  "code_hash": "7b7ab45cf0b68e6a",
   "frozen_hash": "bc4e5c870c6e21b9a0e085cd6b9ae2555f3e7478da4bfaa88170eb03e1a40041",
-  "prospective_configuration_hash": "b33abd57578756ac",
+  "prospective_configuration_hash": "1a55af1d0e6b146f",
   "raw_snapshot_id": "e3b0c44298fc1c14",
   "readiness": {
     "blockers": [
       "historical gap not filled: 22 weekly batches (2026-05-30 to 2026-10-24) have no results; no authorized source was accessible",
       "feature freshness fails for a match after the prospective start: last_eligible_result, last_point_statistics, missing_backfill_weeks",
-      "no verified live provider: schedules for upcoming matches cannot be ingested automatically"
+      "no verified live provider: schedules for upcoming matches cannot be ingested automatically",
+      "status gate: backfill INCOMPLETE, prospective predictions DISABLED (config/prospective.toml [status])"
     ],
     "components": {
       "frozen model integrity": true,
       "historical backfill complete to the prospective start": false,
       "historical replay (inference path = published Phase 3B)": true,
       "live schedule and result provider verified": false,
-      "state reconstruction (Phase 2 + 3A outputs reproduced)": true
+      "state reconstruction (Phase 2 + 3A outputs reproduced)": true,
+      "status gate: backfill INCOMPLETE, prospective predictions DISABLED": false
     },
     "ready_for_prospective_predictions": false
   },

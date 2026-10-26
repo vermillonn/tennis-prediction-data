@@ -4,6 +4,8 @@ Derived from Jeff Sackmann's ATP data (CC BY-NC-SA 4.0); aggregate statistics on
 
 ## 1. Verdict
 
+Status: historical backfill **INCOMPLETE** · prospective predictions **DISABLED** · real-provider integrations **UNVERIFIED** (gate: `config/prospective.toml` `[status]`).
+
 **The gap is not filled.** The pinned archive (commit `83733587353d`) ends with events starting on 2026-05-25. No result after that is available to this system: 22 weekly batches (2026-05-30 to 2026-10-24) contain no newly starting events (the first of them is only the second week of Roland Garros 2026), and the backfill accepted 0 records for that period. No authorized source was reachable (`source_feasibility.md`). The player state therefore stops at the archive end.
 
 ## 2. Final valid coverage of the archive (verified from the validated table)
