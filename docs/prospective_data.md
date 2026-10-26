@@ -21,7 +21,7 @@ uv run tennis-data prospective-predict upcoming.json --mode prospective        #
 | `providers/http.py` | keys from environment variables, rate limiter, bounded exponential backoff on 429 and 5xx, no retry on 401 and 403 |
 | `providers/fixture.py` | documented JSON exchange format, used by CI and by converted authorized exports |
 | `providers/sackmann_csv.py` | authorized Sackmann-format CSV import (archive IDs, `sackmann_v1` statistics) |
-| `providers/sportradar.py` | raw retrieval only; the response mapping is deliberately not implemented until verified |
+| `providers/sportradar.py` | raw retrieval only; **unverified**, the response mapping is deliberately not implemented |
 | `identity.py` | provider player ID → canonical ID with categories and persisted decisions |
 | `reconciliation.py` | versions, conflicts, precedence and tournament identity; conversion to Sackmann rows |
 | `backfill.py` | parse store → identity → reconcile → **unchanged Phase 1 validation** → ledger → state snapshot |
@@ -35,19 +35,40 @@ The only change to earlier phases is a refactor: `pipeline.validate_frame` was e
 `validate`. Behaviour is the same, so new rows pass exactly the Phase 1 rules. The Phase 1 to 3B outputs are
 byte-identical after the change (verified).
 
-## 2. Time fields
+## 2. Time fields: release-time assumptions versus acquisition timestamps
 
-| field | meaning | source |
+There are two different kinds of time in this system, and they are never substituted for each other.
+
+**A. Historical release-time assumptions (inferred, not observed).** The source has no match times. When a result
+"became available" is an *assumption* derived from the event start date by the frozen Phase 2 rule:
+
+| field | meaning | how it is obtained |
 |---|---|---|
-| `event_start_date` | tournament start date (the only date the archive has) | provider |
-| `event_start_at` | match start time | provider, only if stated; never inferred |
-| `event_completed_at` | match end time | provider, only if stated |
-| `source_published_at` | when the provider published this version | provider, if stated |
-| `ingested_at` | when this system retrieved or imported the snapshot | raw store |
-| `state_eligible_at` | when the result may update player state | **inferred**: 00:00 UTC on the Saturday after the release batch |
-| `source_version` | provider record version (corrections have higher versions) | provider |
+| `prediction_batch` | weekly batch (Saturday–Friday) containing the event start date | inferred from `event_start_date` |
+| `release_batch` | batch whose close releases the result (one week later for two-week events) | inferred (`event_weeks`) |
+| `state_eligible_at` | when the result may update player state: 00:00 UTC on the day after the release batch closes | **inferred**; ledger `eligibility_basis = inferred_weekly_batch` |
 
-All times are timezone-aware UTC. A timestamp without an offset is rejected rather than assumed.
+These are conservative bounds, not observations. The historical results were not necessarily known at these times,
+only no earlier than the rule allows. They hold for the archive and for every backfilled row.
+
+**B. Source and acquisition timestamps (recorded, never inferred).**
+
+| field | meaning | how it is obtained |
+|---|---|---|
+| `event_start_date` | tournament start date | stated by the source |
+| `event_start_at` | match start time | stated by the source, otherwise null (never invented) |
+| `event_completed_at` | match end time | stated by the source, otherwise null |
+| `source_published_at` | when the source says it published this version | stated by the source, otherwise null |
+| `ingested_at` (`retrieved_at`) | when *this system* downloaded or imported the snapshot | recorded by the raw store at acquisition |
+| `source_version` | the source's record version (corrections have higher versions) | stated by the source (default 1) |
+
+All of these are timezone-aware UTC. A timestamp without an offset is rejected rather than assumed. An acquisition
+time says when *we* learned a result, not when it was historically knowable. A May–October 2026 result acquired in
+November 2026 has `ingested_at` in November and an inferred `state_eligible_at` in its own week. It is used only as
+historical reconstruction (section 3), and never as evidence that a forecast made then could have known it.
+
+Phase 4A uses only the inferred release times (A) to decide state updates. The recorded source timestamps (B) are
+stored for audit and for a possible future timestamp-based policy, which would need its own version and tests.
 
 ## 3. Chronology
 
@@ -105,7 +126,8 @@ outcome. This is the mechanism every historical prediction used, so M4A receives
 
 **Prediction modes**
 
-- `prospective`: only for matches starting after 2026-10-25, generated before the match start (the verified time,
+- `prospective`: only while the status gate is ENABLED (currently DISABLED), for matches starting after 2026-10-25,
+  generated before the match start (the verified time,
   otherwise 00:00 UTC of the event start date), from a state with no later results, and with freshness not `fail`.
   Phase 4A does not persist predictions; the immutable ledger is Phase 4B.
 - `exploratory_retrospective`: anything computed after the fact.
@@ -129,11 +151,29 @@ and produces warnings in January.
 All sources pass the same identity, Phase 1 validation and reconciliation rules. Statistics with an untested
 counting convention never update the serve/return state.
 
-## 10. Status and limitations (2026-10-25)
+## 10. Provider verification status
 
+**No real-provider integration is verified.** "Verified" below means only that the code is tested against
+documented or synthetic fixtures. None of them has been run against a live provider.
+
+| adapter | real access tested | response format verified | statistics convention verified | may update state |
+|---|---|---|---|---|
+| `sackmann_csv` (manual import) | no new file was available | yes (archive format) | yes (`sackmann_v1`) | yes, after identity and Phase 1 validation |
+| `tennis-fixture-provider-1` (exchange format) | n/a (format for converted exports and CI) | yes (documented here) | only if a record declares `sackmann_v1` | yes, after identity and Phase 1 validation |
+| `sportradar` (HTTP) | **no** (host blocked; no key) | **no**: `normalize` raises `NotVerifiedError` | **no** | no |
+| tennisdata.app, tennis-api.com, others | **no** (hosts blocked) | no adapter | no | no |
+
+## 11. Status and limitations (2026-10-26)
+
+- **Historical backfill: INCOMPLETE.** **Prospective predictions: DISABLED.** Both are set in
+  `config/prospective.toml` `[status]` and enforced in code. `prospective` mode refuses every request while the
+  gate is DISABLED, and the configuration cannot enable predictions while the backfill is INCOMPLETE. Freshness
+  checks are never bypassed.
 - **No current source was accessible**, because the environment's network policy blocks every provider host. The
-  archive mirror has no data after 2026-05-25. The 22-week gap to the prospective start is **not filled**, so the
-  system is **not ready** for prospective predictions (`reports/prospective/inference_readiness.md`).
-- The Sportradar response mapping is not implemented, because it was not verified.
+  archive mirror has no data after 2026-05-25, and the 22-week gap to the prospective start is **not filled**
+  (`reports/prospective/backfill_coverage.md`, `inference_readiness.md`).
+- **Real-provider integrations are unverified** (section 10). The Sportradar response mapping is not implemented.
 - Identity matching quality on a real provider is unmeasured.
 - The last archive event (Roland Garros 2026) has no serve statistics.
+- Corrections rebuild the state deterministically and never modify recorded predictions. Phase 4A itself stores no
+  predictions; the immutable prediction ledger is Phase 4B.

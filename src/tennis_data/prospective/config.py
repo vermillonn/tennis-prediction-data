@@ -48,6 +48,8 @@ class HttpProviderConfig:
 class ProspectiveConfig:
     modeling: ModelingConfig
     expected_frozen_hash: str
+    backfill_status: str
+    prospective_predictions: str
     prospective_dir: Path
     reports_dir: Path
     chronology_policy: str
@@ -99,6 +101,7 @@ class ProspectiveConfig:
             "freshness": asdict(self.freshness),
             "modeling_configuration_hash": self.modeling.configuration_hash(),
             "expected_frozen_hash": self.expected_frozen_hash,
+            "status": [self.backfill_status, self.prospective_predictions],
         }
 
     def configuration_hash(self) -> str:
@@ -138,6 +141,8 @@ def load_prospective_config(path: str | Path | None = None, root: str | Path | N
     cfg = ProspectiveConfig(
         modeling=modeling,
         expected_frozen_hash=str(d.get("model", {}).get("expected_frozen_hash", "")),
+        backfill_status=str(d.get("status", {}).get("backfill", "INCOMPLETE")),
+        prospective_predictions=str(d.get("status", {}).get("prospective_predictions", "DISABLED")),
         prospective_dir=resolve(out.get("prospective_dir", "data/prospective")),
         reports_dir=resolve(out.get("reports_dir", "reports/prospective")),
         chronology_policy=ch.get("policy", "weekly_batch_v1"),
@@ -161,6 +166,12 @@ def load_prospective_config(path: str | Path | None = None, root: str | Path | N
     )
     if len(cfg.expected_frozen_hash) < 16:
         raise ConfigError("[model].expected_frozen_hash must name the frozen model (at least 16 hex characters)")
+    if cfg.backfill_status not in ("INCOMPLETE", "COMPLETE"):
+        raise ConfigError("[status].backfill must be INCOMPLETE or COMPLETE")
+    if cfg.prospective_predictions not in ("DISABLED", "ENABLED"):
+        raise ConfigError("[status].prospective_predictions must be DISABLED or ENABLED")
+    if cfg.prospective_predictions == "ENABLED" and cfg.backfill_status != "COMPLETE":
+        raise ConfigError("prospective predictions cannot be ENABLED while the backfill is INCOMPLETE")
     if cfg.chronology_policy not in CHRONOLOGY_POLICIES:
         raise ConfigError(
             f"[chronology].policy must be one of {CHRONOLOGY_POLICIES}; timestamp policies are not enabled"

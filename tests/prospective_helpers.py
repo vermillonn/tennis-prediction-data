@@ -15,13 +15,18 @@ PROSPECTIVE_START = "2020-07-31"
 
 def prospective_config(tmp: Path, modeling_config: Path, frozen_hash: str, **over) -> Path:
     default = (Path(__file__).resolve().parents[1] / "config" / "prospective.toml").read_text()
-    body = default[default.index("[chronology]") :]
+    body = default[default.index("[status]") :]
+    body = body[: body.index("[outputs]")] + body[body.index("[chronology]") :]
     body = body.replace('historical_snapshot_end = "2026-05-25"', f'historical_snapshot_end = "{SNAPSHOT_END}"')
     body = body.replace(
         'prospective_start = "2026-10-25"', f'prospective_start = "{over.get("start", PROSPECTIVE_START)}"'
     )
     body = body.replace('overrides = "config/identity_overrides.toml"', f'overrides = "{tmp / "overrides.toml"}"')
     body = body.replace("cases_per_category = 25", "cases_per_category = 6")
+    if over.get("enabled"):  # only for tests of the guards behind the status gate
+        body = body.replace('backfill = "INCOMPLETE"', 'backfill = "COMPLETE"').replace(
+            'prospective_predictions = "DISABLED"', 'prospective_predictions = "ENABLED"'
+        )
     if over.get("auto_approve"):
         body = body.replace("auto_approve_high_confidence = false", "auto_approve_high_confidence = true")
     text = (f'modeling_config = "{modeling_config}"\n\n[model]\nexpected_frozen_hash = "{frozen_hash}"\n\n'

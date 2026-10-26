@@ -6,6 +6,12 @@ modeling_config = "config/modeling.toml"   # locates the feature, Elo and Phase 
 [model]
 expected_frozen_hash = "bc4e5c870c6e21b9"  # published Phase 3B frozen M4A hash; any other model is refused
 
+[status]
+# Operational gates, changed only by a reviewed commit. Prospective predictions stay DISABLED until the historical
+# backfill reaches the prospective start (COMPLETE) and a verified provider supplies schedules.
+backfill = "INCOMPLETE"                    # INCOMPLETE | COMPLETE
+prospective_predictions = "DISABLED"       # DISABLED | ENABLED (ENABLED requires backfill = COMPLETE)
+
 [outputs]
 prospective_dir = "data/prospective"      # raw snapshots, identity registry, backfill state (git-ignored)
 reports_dir = "reports/prospective"

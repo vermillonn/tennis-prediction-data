@@ -8,6 +8,9 @@ Assessment date: 2026-10-25. This is a research document, written by hand. Each 
 
 No credentials were available, and none were requested or used.
 
+**Status: every real-provider integration is UNVERIFIED.** No provider could be accessed, so no adapter has been
+run against real responses. Historical backfill: **INCOMPLETE**. Prospective predictions: **DISABLED**.
+
 ## 1. What was actually accessible
 
 The Phase 4A container runs behind an egress proxy with an allow-list. Results of direct access attempts on

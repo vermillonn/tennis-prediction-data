@@ -39,11 +39,13 @@ def world(tmp_path_factory):
     return {"tmp": tmp, "cfg": cfg, "modeling": res}
 
 
-def _fresh_cfg(world, name):
+def _fresh_cfg(world, name, **over):
     """A Phase 4A config with its own empty prospective directory on the shared synthetic world."""
     tmp = world["tmp"] / name
     tmp.mkdir()
-    path = prospective_config(tmp, world["cfg"].modeling.config_path, world["modeling"]["frozen"]["frozen_hash"])
+    path = prospective_config(
+        tmp, world["cfg"].modeling.config_path, world["modeling"]["frozen"]["frozen_hash"], **over
+    )
     return load_prospective_config(path), tmp
 
 
@@ -398,10 +400,20 @@ def test_unused_imports_guard():
     assert np and random
 
 
-def test_prospective_mode_refuses_stale_or_late_requests(backfilled):
+def test_prospective_mode_is_disabled_by_default(backfilled):
     from tennis_data.prospective.pipeline import PredictionBlocked, predict_upcoming
 
     cfg, _, _ = backfilled
+    with pytest.raises(PredictionBlocked, match="DISABLED"):
+        predict_upcoming(cfg, [_fixture(d=date(2020, 8, 3))], "prospective", now=datetime(2020, 8, 1, tzinfo=UTC))
+
+
+def test_prospective_mode_refuses_stale_or_late_requests(world):
+    from tennis_data.prospective.pipeline import PredictionBlocked, predict_upcoming
+
+    cfg, tmp = _fresh_cfg(world, "guards", enabled=True)  # guards behind the status gate
+    _ingest(cfg, tmp, fixture_doc())
+    run_backfill(cfg)
     late = _fixture(d=date(2020, 8, 3))
     with pytest.raises(PredictionBlocked, match="after the match start"):
         predict_upcoming(cfg, [late], "prospective", now=datetime(2020, 8, 4, tzinfo=UTC))
@@ -414,3 +426,55 @@ def test_prospective_mode_refuses_stale_or_late_requests(backfilled):
     assert ok["prediction_mode"].to_list() == ["exploratory_retrospective"]
     fresh = json.loads(ok["freshness"][0])
     assert fresh["status"] in ("ok", "warning", "fail") and "missing_backfill_weeks" in fresh["checks"]
+
+
+def test_late_corrections_rebuild_state_and_never_touch_recorded_predictions(world):
+    """A prediction recorded before a correction stays byte-identical; the corrected state is a full deterministic
+    rebuild from the earliest affected batch and only ever produces new, separately identified predictions."""
+    from tennis_data.prospective.pipeline import predict_upcoming
+
+    cfg, tmp = _fresh_cfg(world, "late")
+    first_doc = fixture_doc()
+    _ingest(cfg, tmp, first_doc)
+    b1 = run_backfill(cfg)
+    upcoming = _fixture(d=date(2020, 8, 3))
+    pred = predict_upcoming(cfg, [upcoming], "exploratory_retrospective", now=datetime(2020, 8, 1, tzinfo=UTC))
+    recorded = tmp / "recorded" / "predictions.parquet"  # stands in for a committed record (Phase 4B ledger)
+    recorded.parent.mkdir()
+    pred.write_parquet(recorded)
+    recorded_sha = tree_checksums(recorded.parent)
+
+    # The match's own result arrives, then a late correction of an earlier June result (version 2).
+    after = result("f1-res", "t-next", "R32", "fx-100", "fx-200", "fx-200")
+    _ingest(cfg, tmp, fixture_doc(matches=[after], generated_at="2020-08-08T00:00:00+00:00"), "result.json")
+    run_backfill(cfg)
+    fixed = [m if m["id"] != "m1" else result("m1", "t-june1", "R32", "fx-100", "fx-200", "fx-200", version=2)
+             for m in base_matches()]  # fmt: skip
+    _ingest(cfg, tmp, fixture_doc(matches=fixed, generated_at="2020-08-15T00:00:00+00:00"), "correction.json")
+    b3 = run_backfill(cfg)
+    assert b3["replay_from_batch"] == "2020-05-30"  # the corrected match's batch, earlier than the latest data
+    led = b3["ledger"]
+    assert led.filter(pl.col("provider_match_id") == "f1-res")["period"].item() == "after_prospective_start"
+    assert (led["prediction_mode"] == "historical_reconstruction").all()
+
+    # Deterministic reconstruction: a fresh store with the same snapshots, delivered in another order, agrees.
+    cfg2, tmp2 = _fresh_cfg(world, "late_rebuild")
+    for name, doc in (("c.json", fixture_doc(matches=fixed, generated_at="2020-08-15T00:00:00+00:00")),
+                      ("r.json", fixture_doc(matches=[after], generated_at="2020-08-08T00:00:00+00:00")),
+                      ("a.json", first_doc)):  # fmt: skip
+        _ingest(cfg2, tmp2, doc, name)
+    r2 = run_backfill(cfg2)
+    assert r2["summary"]["state_snapshot_id"] == b3["summary"]["state_snapshot_id"]
+    assert r2["summary"]["accepted_table_hash"] == b3["summary"]["accepted_table_hash"]
+    assert b3["summary"]["state_snapshot_id"] != b1["summary"]["state_snapshot_id"]
+
+    # The recorded prediction is untouched; re-pricing creates a new record bound to the new state.
+    assert tree_checksums(recorded.parent) == recorded_sha
+    again = predict_upcoming(cfg, [upcoming], "exploratory_retrospective", now=datetime(2020, 8, 16, tzinfo=UTC))
+    old = pl.read_parquet(recorded)
+    assert old["state_snapshot_id"].item() == b1["summary"]["state_snapshot_id"]
+    assert again["state_snapshot_id"].item() == b3["summary"]["state_snapshot_id"]
+    assert again["feature_state_hash"].item() != old["feature_state_hash"].item()
+    # The backfill writes only inside its own directories.
+    written = {p.relative_to(cfg.prospective_dir).parts[0] for p in cfg.prospective_dir.rglob("*") if p.is_file()}
+    assert written <= {"raw", "identity", "backfill"}

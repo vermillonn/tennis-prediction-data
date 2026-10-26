@@ -1,0 +1,133 @@
+{
+  "expected": {
+    "a_no_recent_form": {
+      "inputs": {
+        "decay_missing_diff": 1.0,
+        "elo_logit": 0.2006706954621514,
+        "rpw_decay_diff": 0.0,
+        "rpw_shrunk_diff": -0.002,
+        "spw_decay_diff": 0.0,
+        "spw_shrunk_diff": 0.004
+      },
+      "probability_a": 0.32014577468809535
+    },
+    "both_no_recent_form": {
+      "inputs": {
+        "decay_missing_diff": 0.0,
+        "elo_logit": -0.12014431184206334,
+        "rpw_decay_diff": 0.0,
+        "rpw_shrunk_diff": 0.0,
+        "spw_decay_diff": 0.0,
+        "spw_shrunk_diff": 0.0
+      },
+      "probability_a": 0.4774632123686889
+    },
+    "coin_flip": {
+      "inputs": {
+        "decay_missing_diff": 0.0,
+        "elo_logit": 0.0,
+        "rpw_decay_diff": 0.0,
+        "rpw_shrunk_diff": 0.0,
+        "spw_decay_diff": 0.0,
+        "spw_shrunk_diff": 0.0
+      },
+      "probability_a": 0.5
+    },
+    "established": {
+      "inputs": {
+        "decay_missing_diff": 0.0,
+        "elo_logit": 0.4895482253187058,
+        "rpw_decay_diff": 0.020000000000000018,
+        "rpw_shrunk_diff": 0.013,
+        "spw_decay_diff": 0.020000000000000018,
+        "spw_shrunk_diff": 0.021
+      },
+      "probability_a": 0.6261523097882015
+    },
+    "extreme_elo": {
+      "inputs": {
+        "decay_missing_diff": 0.0,
+        "elo_logit": 13.815509557935018,
+        "rpw_decay_diff": 0.15000000000000002,
+        "rpw_shrunk_diff": 0.05,
+        "spw_decay_diff": 0.19999999999999996,
+        "spw_shrunk_diff": 0.08
+      },
+      "probability_a": 0.9999921897656266
+    },
+    "underdog": {
+      "inputs": {
+        "decay_missing_diff": 0.0,
+        "elo_logit": -1.5163474893680886,
+        "rpw_decay_diff": -0.07999999999999996,
+        "rpw_shrunk_diff": -0.022,
+        "spw_decay_diff": -0.07000000000000006,
+        "spw_shrunk_diff": -0.035
+      },
+      "probability_a": 0.15147964225368246
+    }
+  },
+  "note": "Hand-made feature states (illustrative values, not real matches). Expected probabilities were computed independently of the package as sigmoid(sum(coef_original_units * input)) from production_model.json.",
+  "rows": [
+    {
+      "ard": 0.39,
+      "asd": 0.66,
+      "brd": 0.37,
+      "bsd": 0.64,
+      "match_id": "established",
+      "p": 0.62,
+      "rpw": 0.013,
+      "spw": 0.021
+    },
+    {
+      "ard": 0.33,
+      "asd": 0.61,
+      "brd": 0.41,
+      "bsd": 0.68,
+      "match_id": "underdog",
+      "p": 0.18,
+      "rpw": -0.022,
+      "spw": -0.035
+    },
+    {
+      "ard": 0.38,
+      "asd": 0.65,
+      "brd": 0.38,
+      "bsd": 0.65,
+      "match_id": "coin_flip",
+      "p": 0.5,
+      "rpw": 0.0,
+      "spw": 0.0
+    },
+    {
+      "ard": null,
+      "asd": null,
+      "brd": 0.36,
+      "bsd": 0.63,
+      "match_id": "a_no_recent_form",
+      "p": 0.55,
+      "rpw": -0.002,
+      "spw": 0.004
+    },
+    {
+      "ard": null,
+      "asd": null,
+      "brd": null,
+      "bsd": null,
+      "match_id": "both_no_recent_form",
+      "p": 0.47,
+      "rpw": null,
+      "spw": null
+    },
+    {
+      "ard": 0.45,
+      "asd": 0.75,
+      "brd": 0.3,
+      "bsd": 0.55,
+      "match_id": "extreme_elo",
+      "p": 0.9999999,
+      "rpw": 0.05,
+      "spw": 0.08
+    }
+  ]
+}

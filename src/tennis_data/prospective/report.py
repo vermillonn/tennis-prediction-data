@@ -26,6 +26,12 @@ def _count(rows, key="len"):
     return sum(r[key] for r in rows)
 
 
+def status_line(cfg) -> str:
+    return (f"Status: historical backfill **{cfg.backfill_status}** · prospective predictions "
+            f"**{cfg.prospective_predictions}** · real-provider integrations **UNVERIFIED** "
+            "(gate: `config/prospective.toml` `[status]`).")  # fmt: skip
+
+
 def backfill_coverage(res) -> str:
     a, bf, cfg = res["audit"], res["backfill"]["summary"], res["cfg"]
     yr = a["year_rows"]
@@ -36,7 +42,7 @@ def backfill_coverage(res) -> str:
     gap_rows = sum(r["len"] for r in bf["by_period"] if r["period"] == "backfill_gap")
     lines = [
         "# Phase 4A backfill coverage: the historical gap to the prospective start", "", LICENSE, "",
-        "## 1. Verdict", "",
+        "## 1. Verdict", "", status_line(cfg), "",
         f"**The gap is not filled.** The pinned archive (commit `{a['archive_commit'][:12]}`) ends with events starting "
         f"on {a['last_tournament_date']}. No result after that is available to this system: {mp['weeks']} weekly "
         f"batches ({mp['first_missing_batch']} to {mp['last_batch_before_prospective']}) contain no newly starting "
@@ -221,6 +227,8 @@ def readiness_report(res) -> str:
         "# Phase 4A inference readiness", "", LICENSE, "",
         "## 1. Assessment", "",
         f"**Ready for genuine prospective predictions: {'YES' if ready['ready_for_prospective_predictions'] else 'NO'}.**",
+        "",
+        status_line(cfg),
         "",
         table(["component", "status"], [[k, "pass" if v else "**not met**"] for k, v in ready["components"].items()]),
         "", "Blockers:", "", *[f"- {b}" for b in ready["blockers"]], "",

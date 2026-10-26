@@ -83,6 +83,9 @@ def readiness(cfg, audit_res, backfill, replay, integ, fresh) -> dict:
         failing = [k for k, v in fresh["checks"].items() if v["status"] == "fail"]
         blockers.append(f"feature freshness fails for a match after the prospective start: {', '.join(failing)}")
     blockers.append("no verified live provider: schedules for upcoming matches cannot be ingested automatically")
+    if cfg.prospective_predictions != "ENABLED":
+        blockers.append(f"status gate: backfill {cfg.backfill_status}, prospective predictions "
+                        f"{cfg.prospective_predictions} (config/prospective.toml [status])")  # fmt: skip
     components = {
         "frozen model integrity": integ["passed"],
         "historical replay (inference path = published Phase 3B)": replay["passed"],
@@ -90,6 +93,8 @@ def readiness(cfg, audit_res, backfill, replay, integ, fresh) -> dict:
         and replay["state_reconstruction"]["elo_max_abs_error"] <= cfg.replay_tolerance,
         "historical backfill complete to the prospective start": accepted_gap > 0 and fresh["status"] != "fail",
         "live schedule and result provider verified": False,
+        f"status gate: backfill {cfg.backfill_status}, prospective predictions {cfg.prospective_predictions}":
+        cfg.prospective_predictions == "ENABLED",
     }  # fmt: skip
     return {"ready_for_prospective_predictions": not blockers, "components": components, "blockers": blockers}
 
@@ -173,7 +178,8 @@ def predict_upcoming(cfg: ProspectiveConfig, fixtures: list[UpcomingMatch], mode
                      now: datetime | None = None) -> pl.DataFrame:  # fmt: skip
     """Price upcoming matches with the frozen production model.
 
-    ``prospective`` requires: every match starts after ``prospective_start``; the prediction is generated before the
+    ``prospective`` requires: the reviewed status gate ``[status].prospective_predictions = ENABLED`` (DISABLED in
+    Phase 4A); every match starts after ``prospective_start``; the prediction is generated before the
     match (verified start time, else 00:00 UTC of the event start date); and freshness is not ``fail``. Otherwise the
     request is refused. Other modes are labelled accordingly and never count as prospective evidence. Phase 4A does
     not persist predictions (the immutable ledger is Phase 4B).
@@ -181,18 +187,11 @@ def predict_upcoming(cfg: ProspectiveConfig, fixtures: list[UpcomingMatch], mode
     from tennis_data.prospective.inference import predict_state
 
     now = now or datetime.now(UTC)
+    if mode == "prospective":
+        check_enabled(cfg)
     snapshot = load_state_snapshot(cfg)
     if mode == "prospective":
-        for f in fixtures:
-            start = (datetime.fromisoformat(f.scheduled_start_at) if f.scheduled_start_at
-                     else datetime.combine(f.tournament_date, datetime.min.time(), UTC))  # fmt: skip
-            if f.tournament_date <= cfg.prospective_start:
-                raise PredictionBlocked(f"{f.match_id}: starts before the prospective period")
-            if now >= start:
-                raise PredictionBlocked(f"{f.match_id}: generated after the match start; not a prospective forecast")
-        future = snapshot.matches.filter(pl.col("tournament_date") > min(f.tournament_date for f in fixtures))
-        if future.height:
-            raise PredictionBlocked("state contains results from after the predicted matches (contamination risk)")
+        check_timing(cfg, fixtures, snapshot.matches, now)
     art = load_production(cfg)
     st = compute_state_for(snapshot, fixtures, cfg)
     cover = state_coverage(st["frame"].filter(~pl.col("match_id").str.starts_with("pending:")))
@@ -205,11 +204,37 @@ def predict_upcoming(cfg: ProspectiveConfig, fixtures: list[UpcomingMatch], mode
     fresh = assess(st["pending"], cover, cfg, unresolved_ids=set(),
                    unresolved_count=0 if unresolved is None else unresolved.height, source_retrieved_at=latest, now=now)  # fmt: skip
     if mode == "prospective":
-        bad = {k: v["status"] for k, v in fresh.items() if v["status"] == "fail"}
-        if bad:
-            raise PredictionBlocked(f"freshness fails for {sorted(bad)}; see the freshness diagnostics")
+        check_freshness(fresh)
     return predict_state(st["pending"], art, cfg, prediction_mode=mode, snapshot_id=snapshot.snapshot_id,
                          components=snapshot.components, freshness=fresh, generated_at=now)  # fmt: skip
+
+
+def check_enabled(cfg: ProspectiveConfig) -> None:
+    """The reviewed status gate in config/prospective.toml ([status])."""
+    if cfg.prospective_predictions != "ENABLED":
+        raise PredictionBlocked(
+            f"prospective predictions are {cfg.prospective_predictions} (backfill {cfg.backfill_status}); "
+            "see reports/prospective/inference_readiness.md"
+        )
+
+
+def check_timing(cfg: ProspectiveConfig, fixtures: list[UpcomingMatch], history: pl.DataFrame, now: datetime) -> None:
+    for f in fixtures:
+        start = (datetime.fromisoformat(f.scheduled_start_at) if f.scheduled_start_at
+                 else datetime.combine(f.tournament_date, datetime.min.time(), UTC))  # fmt: skip
+        if f.tournament_date <= cfg.prospective_start:
+            raise PredictionBlocked(f"{f.match_id}: starts before the prospective period")
+        if now >= start:
+            raise PredictionBlocked(f"{f.match_id}: generated after the match start; not a prospective forecast")
+    future = history.filter(pl.col("tournament_date") > min(f.tournament_date for f in fixtures))
+    if future.height:
+        raise PredictionBlocked("state contains results from after the predicted matches (contamination risk)")
+
+
+def check_freshness(fresh: dict) -> None:
+    bad = sorted(k for k, v in fresh.items() if v["status"] == "fail")
+    if bad:
+        raise PredictionBlocked(f"freshness fails for {bad}; see the freshness diagnostics")
 
 
 def compute_state_for(snapshot, fixtures, cfg):
