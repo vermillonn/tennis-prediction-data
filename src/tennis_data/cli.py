@@ -278,6 +278,10 @@ def main(argv: list[str] | None = None) -> int:
     from tennis_data.evaluation_prospective.cli import register as register_eval
 
     register_eval(sub)
+    from tennis_data.operations.cli import COMMANDS as OPS_COMMANDS
+    from tennis_data.operations.cli import register as register_ops
+
+    register_ops(sub)
     q = sub.add_parser(
         "query",
         help="run SQL against the DuckDB views (matches, quarantine, player_matches, players, elo_*, serve_return_features, model_*)",
@@ -304,6 +308,10 @@ def main(argv: list[str] | None = None) -> int:
         from tennis_data.evaluation_prospective.cli import run as run_eval
 
         handlers[args.command] = lambda a, c: run_eval(a)
+    if args.command in OPS_COMMANDS:
+        from tennis_data.operations.cli import run as run_ops
+
+        handlers[args.command] = lambda a, c: run_ops(a)
     try:
         config = load_config(args.config)
         return handlers[args.command](args, config)

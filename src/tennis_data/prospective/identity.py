@@ -9,7 +9,9 @@ Evidence, strongest first:
    nationality)                                                               -> high_confidence
 5. several surviving candidates, a declared ID whose name disagrees, or only
    an abbreviated/partial name match                                          -> ambiguous
-6. no candidate sharing the surname                                           -> unmatched (new canonical ID)
+6. no candidate sharing the surname, but a canonical player with the same name tokens in another order, or the
+   same birth date and a related name (Phase 5A fix, real TML case)                               -> ambiguous
+7. no candidate at all                                                       -> unmatched (new canonical ID)
 
 Birth dates that disagree eliminate a candidate. Nationality never eliminates one (players change national
 representation); it is recorded as evidence. High-confidence matches are usable only when the policy auto-approves
@@ -87,6 +89,8 @@ class Master:
 
     df: pl.DataFrame  # player_id, first_name, last_name, country, birth_date, source
     by_surname: dict
+    by_tokens: dict = None  # frozenset of all name tokens -> rows (name order and first/last split ignored)
+    by_dob: dict = None  # birth date -> rows
 
     @classmethod
     def build(cls, players: pl.DataFrame, registry: pl.DataFrame) -> Master:
@@ -94,14 +98,50 @@ class Master:
                               "birth_date", pl.lit("new_player_registry").alias("source"))  # fmt: skip
         df = pl.concat([players.with_columns(pl.lit("archive").alias("source")), reg], how="vertical_relaxed")
         by: dict = {}
+        by_tokens: dict = {}
+        by_dob: dict = {}
         for r in df.iter_rows(named=True):
             for k in surname_keys(r["last_name"]):
                 by.setdefault(k, []).append(r)
-        return cls(df, by)
+            toks = name_tokens(r["first_name"], r["last_name"])
+            if toks:
+                by_tokens.setdefault(toks, []).append(r)
+            if r["birth_date"] is not None:
+                by_dob.setdefault(r["birth_date"], []).append(r)
+        return cls(df, by, by_tokens, by_dob)
 
     def get(self, pid: int) -> dict | None:
         m = self.df.filter(pl.col("player_id") == pid)
         return m.row(0, named=True) if m.height else None
+
+
+def name_tokens(first: str | None, last: str | None) -> frozenset:
+    return frozenset(norm(f"{first or ''} {last or ''}").split())
+
+
+def _related(a: frozenset, b: frozenset) -> bool:
+    """A shared name token, or one name's token equal to two of the other's joined ('sasikumar' ~ 'sasi kumar')."""
+    if a & b:
+        return True
+    joined = lambda t: {x + y for x in t for y in t if x != y}  # noqa: E731
+    return bool(a & joined(b)) or bool(b & joined(a))
+
+
+def unindexed_candidates(p: dict, master: Master) -> list[int]:
+    """Canonical players the surname index cannot see: names written in another order or split differently.
+
+    Real case (TML vs the archive): "Yunchaokete Bu" is stored as first="Bu", last="Yunchaokete"; "Mukund Sasikumar"
+    as "Sasi Kumar Mukund". Without this search such a player would receive a new canonical ID and split their
+    history. Candidates: the same set of name tokens in any order, or the same birth date with a related name.
+    """
+    toks = name_tokens(p["first_name"], p["last_name"])
+    if not toks:
+        return []
+    out = {c["player_id"] for c in (master.by_tokens or {}).get(toks, ())}
+    if p["birth_date"] is not None:
+        out |= {c["player_id"] for c in (master.by_dob or {}).get(p["birth_date"], ())
+                if _related(toks, name_tokens(c["first_name"], c["last_name"]))}  # fmt: skip
+    return sorted(out)
 
 
 def load_archive_players(cfg: ProspectiveConfig) -> pl.DataFrame:
@@ -181,6 +221,10 @@ def classify(p: dict, master: Master, overrides: dict, prior: dict, cfg: Prospec
         for c in master.by_surname.get(k, ()):
             pool[c["player_id"]] = c
     if not pool:
+        alt = unindexed_candidates(p, master)
+        if alt:  # possibly a known player under another name order or spelling: a reviewer decides
+            ev["unindexed_candidates"] = alt
+            return out("ambiguous", None, "name_order_or_spelling_variant", False, alt)
         if cfg.accept_unmatched_as_new:
             return out("unmatched", None, "new_player", True)
         return out("unmatched", None, "no_candidate", False)

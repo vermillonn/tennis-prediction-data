@@ -1,0 +1,128 @@
+# Phase 5A: operational data readiness. Nothing here changes Elo, features, M4A, the ledger or the status gates.
+# Provider probes make one lightweight request each and never send credentials to a host other than the
+# provider's own API; credentials are read from environment variables and never printed or stored.
+
+prospective_config = "config/prospective.toml"
+evaluation_config = "config/evaluation.toml"
+
+[model]
+# Recorded expectations, checked against the live artifacts (never used to compute anything).
+expected_frozen_hash = "bc4e5c870c6e21b9"
+expected_configuration_hash = "5e72010100065889"
+
+[outputs]
+workspace_dir = "data/operations"          # downloads, converted files, Phase 4A workspace (git-ignored)
+reports_dir = "reports/operations"
+
+[gap]
+# Historical gap to fill: from the week after the pinned archive's last tournament week to the last completed week.
+first_week = "2026-06-01"                  # Monday after the Roland Garros 2026 start week (2026-05-25)
+archive_last_week = "2026-05-25"
+pools = ["G", "M", "A", "F", "D"]          # tour-level competitions of the frozen rating population (no Challenger/ITF)
+calendar_reference_season = 2025           # expected tournaments per week are INFERRED from this archive season
+
+[compatibility]
+overlap_seasons = [2025, 2026]             # seasons present in both the archive and the candidate source
+date_tolerance_days = 7
+min_matched_observations = 500             # below: statistics are not judged compatible
+min_exact_agreement = 0.98                 # per counting field, share of exactly equal values among matched matches
+
+[readiness]
+# Every check listed here must PASS before activation can even be proposed. The evaluator never changes the gate.
+required = ["historical_weeks_covered", "no_material_event_gaps", "population_compatible", "stats_definitions_verified",
+            "no_invented_values", "identities_resolved", "result_freshness", "stats_freshness", "schedule_source_verified",
+            "schedule_players_verified", "actual_start_source", "frozen_model_hashes", "historical_replay",
+            "ledger_ready", "external_timestamp_authority", "status_gate_consistent"]
+
+[tml]
+# TML-Database (https://github.com/Tennismylife/TML-Database): Sackmann-format CSVs with ATP player codes.
+# Research/educational use only per its README; redistribution of raw data is not permitted. Raw files stay in
+# the git-ignored workspace; only aggregates enter reports. Pinned commit for reproducible downloads:
+repository = "Tennismylife/TML-Database"
+commit = "c5537eed87d8a76f3adb598cdf506d885872923b"
+base_url = "https://raw.githubusercontent.com"
+files = ["2025.csv", "2026.csv", "ongoing_tourneys.csv", "ATP_Database.csv"]
+level_map = { "250" = "A", "500" = "A", "G" = "G", "M" = "M", "A" = "A", "F" = "F", "D" = "D", "O" = "O" }
+
+# Provider catalogue. kind: api (needs a key), file (public download), repo (git-hosted files), website.
+# probe: URL requested once (no credentials are attached to probes). verify: how a 200 response is checked.
+[[providers]]
+name = "sportradar_tennis"
+kind = "api"
+probe = "https://api.sportradar.com/tennis/trial/v3/en/schedules/live/summaries.json"
+credential_env = "SPORTRADAR_API_KEY"
+auth = "header:x-api-key"
+offers = { historical_results = "yes (documented)", serve_statistics = "yes (documented, per-match statistics endpoint)", schedules = "yes (documented)", actual_start = "yes (documented sport_event_status / start time)", corrections = "yes (documented changes feeds)" }
+terms = "commercial; trial key limited (1 request/s, trial quotas); redistribution restricted by contract"
+
+[[providers]]
+name = "api_tennis"
+kind = "api"
+probe = "https://api.api-tennis.com/tennis/?method=get_events"
+credential_env = "API_TENNIS_KEY"
+auth = "query:APIkey"
+offers = { historical_results = "yes (documented)", serve_statistics = "partial (documented match statistics)", schedules = "yes (documented fixtures)", actual_start = "unverified", corrections = "unverified" }
+terms = "commercial subscription"
+
+[[providers]]
+name = "tennisdata_app"
+kind = "api"
+probe = "https://tennisdata.app/"
+credential_env = "TENNISDATA_APP_KEY"
+auth = "header:Authorization"
+offers = { historical_results = "unverified", serve_statistics = "unverified", schedules = "unverified", actual_start = "unverified", corrections = "unverified" }
+terms = "unverified (documentation not reachable)"
+
+[[providers]]
+name = "rapidapi_tennisapi"
+kind = "api"
+probe = "https://tennisapi1.p.rapidapi.com/api/tennis/events/live"
+credential_env = "RAPIDAPI_KEY"
+auth = "header:X-RapidAPI-Key"
+offers = { historical_results = "unverified", serve_statistics = "unverified", schedules = "unverified", actual_start = "unverified", corrections = "unverified" }
+terms = "marketplace subscription; terms set by the listing"
+
+[[providers]]
+name = "tennis_data_co_uk"
+kind = "file"
+probe = "https://www.tennis-data.co.uk/2026/2026.xlsx"
+offers = { historical_results = "yes (results and betting odds)", serve_statistics = "no", schedules = "no", actual_start = "no", corrections = "silent file updates" }
+terms = "free for personal/research use per site; no serve statistics"
+
+[[providers]]
+name = "sackmann_upstream"
+kind = "repo"
+probe = "https://raw.githubusercontent.com/JeffSackmann/tennis_atp/master/atp_matches_2025.csv"
+verify = "sackmann_csv"
+offers = { historical_results = "historically yes", serve_statistics = "yes (sackmann_v1)", schedules = "no", actual_start = "no", corrections = "git history" }
+terms = "CC BY-NC-SA 4.0"
+
+[[providers]]
+name = "archive_mirror"
+kind = "repo"
+probe = "https://raw.githubusercontent.com/Aneeshers/tennis-sackmann-archive/main/atp/atp_matches_2026.csv"
+verify = "sackmann_csv"
+offers = { historical_results = "yes, to the pinned archive end", serve_statistics = "yes (sackmann_v1)", schedules = "no", actual_start = "no", corrections = "git history" }
+terms = "CC BY-NC-SA 4.0 (Sackmann attribution)"
+
+[[providers]]
+name = "tml_github"
+kind = "repo"
+probe = "https://raw.githubusercontent.com/Tennismylife/TML-Database/master/2026.csv"
+verify = "sackmann_csv"
+offers = { historical_results = "yes (archived copy)", serve_statistics = "yes (definition to be verified)", schedules = "no", actual_start = "no", corrections = "git history" }
+terms = "research/educational use; raw redistribution not permitted (README)"
+
+[[providers]]
+name = "tml_website"
+kind = "website"
+probe = "https://stats.tennismylife.org/"
+offers = { historical_results = "yes (live database, per README)", serve_statistics = "unverified", schedules = "unverified", actual_start = "unverified", corrections = "unverified" }
+terms = "website; no documented API or bulk-download licence"
+
+[[providers]]
+name = "atp_tour_website"
+kind = "website"
+probe = ""                                  # not probed: automated retrieval is not authorized by the site's terms
+offers = { historical_results = "website only", serve_statistics = "website only", schedules = "website only", actual_start = "unverified", corrections = "unverified" }
+terms = "terms of use do not permit automated collection; not a usable source"
