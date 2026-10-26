@@ -1,0 +1,19 @@
+# Phase 4B: append-only prediction ledger. Nothing here changes the frozen M4A model or the Phase 4A status gate.
+
+prospective_config = "config/prospective.toml"   # status gate, expected frozen hash, freshness thresholds
+
+[outputs]
+ledger_path = "data/ledger/ledger.sqlite"         # git-ignored; the local transactional store
+export_dir = "data/ledger/export"
+checkpoint_dir = "data/ledger/checkpoints"
+reports_dir = "reports/ledger"
+
+[ledger]
+schema_version = "ledger-1"
+probability_tolerance = 1e-12                     # |P(A) + P(B) - 1|
+busy_timeout_ms = 30000
+# Forecast slots: the only legitimate reasons to hold more than one forecast of the same match per mode and model.
+forecast_slots = ["pre_match", "t_minus_24h", "t_minus_1h"]
+
+[prospective]
+max_schedule_age_hours = 24                       # schedule snapshot must be at most this old at commit time
