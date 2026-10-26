@@ -91,6 +91,8 @@ def annotate(df: pl.DataFrame, policy: AvailabilityPolicy) -> pl.DataFrame:
 
 def usable(df: pl.DataFrame, forecast_created_at: datetime) -> pl.Series:
     """Rows (already annotated) whose result may enter the state of a forecast created at ``forecast_created_at``."""
+    if forecast_created_at.tzinfo is None:
+        raise ValueError("forecast_created_at must be timezone-aware")
     return (pl.col("available_at").is_not_null() & (pl.col("available_at") <= forecast_created_at)).alias("usable")
 
 
@@ -113,3 +115,12 @@ def evaluate(df: pl.DataFrame, policy: AvailabilityPolicy, forecast_times: list[
                 .height),
             "usable_at": {t.isoformat(): int(a.select(usable(a, t)).to_series().sum()) for t in forecast_times},
             "latest_available_at": str(ok["available_at"].max()) if ok.height else None}  # fmt: skip
+
+
+def as_known_at(df: pl.DataFrame, policy: AvailabilityPolicy, forecast_created_at: datetime) -> pl.DataFrame:
+    """The state input of a forecast created at ``forecast_created_at``: per match, the latest source version that
+    was available by then. A correction ingested later never reaches an earlier forecast; a match whose every
+    version is unavailable is absent. Requires ``match_id`` and ``source_version`` besides the ``annotate`` columns."""
+    a = annotate(df, policy)
+    known = a.filter(usable(a, forecast_created_at))
+    return known.sort("match_id", "source_version").unique("match_id", keep="last", maintain_order=True)

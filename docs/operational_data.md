@@ -232,3 +232,39 @@ Report: `reports/operations/owner_export_<label>.md`. Raw files stay git-ignored
   property, and changing it for backfilled rows would be a chronology change that needs the owner's decision.
 - **Simulation.** With the proposed identity mappings treated as approved, the unchanged Phase 4A backfill runs in a
   sandbox copy; its results are labelled SIMULATION. The production backfill needs the owner's approved mappings.
+
+## 14. Controlled historical backfill and snapshots
+
+`operations/controlled_backfill.py` implements the owner's authorization of 2026-10-26. Report:
+`reports/operations/controlled_backfill_<label>.md`; per-match status `..._matches.json`.
+
+- **Approvals.** Only overlap-corroborated and exact name+birth-date mappings that pass every invariant in
+  `INVARIANTS` are approved; failures are removed and reported with the reason. A Phase 4A candidate that an exact
+  birth date cannot exclude (an undated or same-birth-date archive record) is a conflicting candidate. Approvals go
+  to `config/identity_approvals/<label>.toml` (reviewer, approval class, authorization reference, evidence). The
+  proposed files and `config/identity_overrides.toml` are never modified; staging uses both files together.
+- **Pending players.** Matches involving any pending player (ambiguous, new, `name_country`, rejected) are
+  quarantined *before* import, so Phase 4A never assigns a new canonical ID and never merges archive IDs.
+- **Snapshots.** `data/operations/snapshots/` holds content-addressed objects (SHA-256) and immutable manifests.
+  The baseline of `data/prospective/` is verified by restoring it as the staging directory and recomputing its state
+  ID. A staged state is promoted only if every verification check passes, as `historical-v1-<state id>`, registered
+  in `registry.json` with its parent. `data/prospective/` stays the active Phase 4A directory; switching to a promoted
+  snapshot is a separate owner decision.
+
+## 15. Historical batching is not evidence of pre-match availability
+
+The frozen weekly batching (`weekly_batch_v1`) decides when a historical result updates the rating state in the
+archive, M4A and every historical evaluation, and it stays unchanged. It is an approximation built on event start
+dates: it does **not** show that a result was actually known before a given forecast. With per-match dates, 121 of
+the backfilled matches were played on or after the day the frozen rule releases them. Backfilled rows therefore run
+in `historical_reconstruction` mode only and can never count as genuine prospective forecasts (those require ledger
+events published before the match).
+
+For prospective inference, `state_availability_v1` (`operations/availability.py`, `config/availability.toml`) is the
+proposed rule: a result version enters a forecast's state only if `max(frozen release, ingestion time, match date + 2
+days)` is at or before the forecast's creation time; undated results wait 21 days after their release batch; missing
+or impossible ingestion times exclude the row; `as_known_at` keeps per match the latest version available at that
+time, so a correction never reaches an earlier forecast. It is **disabled**. Integrating it into
+`prospective.pipeline.compute_state_for` (filtering the backfill rows with `as_known_at` before the state is built)
+is a later, reviewed change; `tests/test_authorization_review.py` pins its behaviour at timezone boundaries, with
+delayed ingestion, corrected outcomes and unresolved actual dates.

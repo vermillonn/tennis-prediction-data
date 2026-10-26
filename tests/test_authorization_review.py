@@ -180,3 +180,58 @@ def test_review_events_flags():
     assert late["overrun_days"] == 2
     assert "event_longer_than_frozen_weeks" in us["flags"] and us["span_days"] == 15
     assert {"masters_below_96_draw_one_week_rule", "event_longer_than_frozen_weeks"} <= set(masters["flags"])
+
+
+# --- eventual integration of state_availability_v1 into inference (policy stays disabled) ---------------------------
+def _versions(rows):
+    return pl.DataFrame(rows, schema={"match_id": pl.String, "source_version": pl.Int64, "state_eligible_at": av.UTC_TS,
+                                      "release_batch": pl.Date, "match_date": pl.Date, "ingested_at": av.UTC_TS})  # fmt: skip
+
+
+def _v(mid, ver, match_date, ingested):
+    return {"match_id": mid, "source_version": ver, "state_eligible_at": _ts(2026, 6, 13),
+            "release_batch": date(2026, 6, 6), "match_date": match_date, "ingested_at": ingested}  # fmt: skip
+
+
+def test_availability_timezone_boundaries():
+    from datetime import timedelta, timezone
+
+    # A final on Sunday 14 June local time in UTC-12 ends by 12:00 UTC on 15 June: not usable before 16 June 00:00 UTC,
+    # even if ingestion is stamped in a far-east offset that reads as an earlier calendar day.
+    east = timezone(timedelta(hours=14))
+    df = _versions([_v("m", 1, date(2026, 6, 14), datetime(2026, 6, 15, 9, 0, tzinfo=east))])  # 14 June 19:00 UTC
+    a = av.annotate(df, POL)
+    assert a["available_at"].to_list() == [_ts(2026, 6, 16)]
+    assert a.select(av.usable(a, _ts(2026, 6, 15, 23, 59))).to_series().sum() == 0
+    assert a.select(av.usable(a, datetime(2026, 6, 16, 14, 0, tzinfo=east))).to_series().sum() == 1  # = 00:00 UTC
+    with pytest.raises(ValueError, match="timezone-aware"):
+        av.usable(a, datetime(2026, 6, 20))
+
+
+def test_availability_delayed_ingestion_governs():
+    df = _versions([_v("m", 1, date(2026, 6, 10), _ts(2026, 7, 2, 8))])  # source delivered three weeks late
+    a = av.annotate(df, POL)
+    assert a["available_at"].to_list() == [_ts(2026, 7, 2, 8)]  # neither the frozen release nor the buffer
+    assert av.as_known_at(df, POL, _ts(2026, 7, 1)).height == 0
+
+
+def test_availability_corrected_outcome_never_reaches_earlier_forecasts():
+    df = _versions(
+        [
+            _v("m", 1, date(2026, 6, 12), _ts(2026, 6, 13, 6)),  # original result
+            _v("m", 2, date(2026, 6, 12), _ts(2026, 6, 20, 6)),
+        ]
+    )  # correction ingested a week later
+    assert av.as_known_at(df, POL, _ts(2026, 6, 15))["source_version"].to_list() == [1]
+    assert av.as_known_at(df, POL, _ts(2026, 6, 21))["source_version"].to_list() == [2]
+    assert av.as_known_at(df, POL, _ts(2026, 6, 13)).height == 0
+
+
+def test_availability_unresolved_actual_date_waits_for_the_undated_bound():
+    df = _versions([_v("m", 1, None, _ts(2026, 6, 14))])
+    a = av.annotate(df, POL)
+    assert a["availability_status"].to_list() == ["ok"]
+    assert a["available_at"].to_list() == [_ts(2026, 6, 27)]  # release batch 6 June + 21 days
+    assert (
+        av.as_known_at(df, POL, _ts(2026, 6, 26)).height == 0 and av.as_known_at(df, POL, _ts(2026, 6, 27)).height == 1
+    )
