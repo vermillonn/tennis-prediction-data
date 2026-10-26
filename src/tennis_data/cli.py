@@ -196,6 +196,20 @@ def _elo_dir_if_built():
     return load_elo_config(DEFAULT_ELO_CONFIG).elo_dir if DEFAULT_ELO_CONFIG.exists() else None
 
 
+def _ledger_export_dir():
+    from tennis_data.ledger.writer import DEFAULT_LEDGER_CONFIG
+
+    if not DEFAULT_LEDGER_CONFIG.exists():
+        return None
+    import tomllib
+
+    from tennis_data.config import PROJECT_ROOT
+
+    with DEFAULT_LEDGER_CONFIG.open("rb") as fh:
+        rel = tomllib.load(fh).get("outputs", {}).get("export_dir", "data/ledger/export")
+    return PROJECT_ROOT / rel
+
+
 def _cmd_query(args, config) -> int:
     from tennis_data.storage.query import connect
 
@@ -204,6 +218,7 @@ def _cmd_query(args, config) -> int:
         elo_dir=_elo_dir_if_built(),
         features_dir=_features_dir_if_built(),
         modeling_dir=_modeling_dir_if_built(),
+        ledger_export_dir=_ledger_export_dir(),
     )
     rel = con.sql(args.sql)
     if rel is None:
@@ -255,6 +270,10 @@ def main(argv: list[str] | None = None) -> int:
                 default="prospective",
                 choices=["prospective", "exploratory_retrospective", "historical_reconstruction"],
             )
+    from tennis_data.ledger.cli import COMMANDS as LEDGER_COMMANDS
+    from tennis_data.ledger.cli import register as register_ledger
+
+    register_ledger(sub)
     q = sub.add_parser(
         "query",
         help="run SQL against the DuckDB views (matches, quarantine, player_matches, players, elo_*, serve_return_features, model_*)",
@@ -273,6 +292,10 @@ def main(argv: list[str] | None = None) -> int:
         "prospective-backfill": _cmd_prospective_backfill, "prospective-run": _cmd_prospective_run,
         "prospective-predict": _cmd_prospective_predict,
     }  # fmt: skip
+    if args.command in LEDGER_COMMANDS:
+        from tennis_data.ledger.cli import run as run_ledger
+
+        handlers[args.command] = lambda a, c: run_ledger(a)
     try:
         config = load_config(args.config)
         return handlers[args.command](args, config)

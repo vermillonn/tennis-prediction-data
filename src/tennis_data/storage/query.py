@@ -12,6 +12,7 @@ Views:
   serve_return_features        Phase 3A point-in-time serve/return feature table (if built)
   model_predictions            Phase 3B predictions of every registered experiment (if built)
   model_selected_predictions   Phase 3B frozen selected model, development + exploratory (if built)
+  ledger_events                Phase 4B ledger export (read-only view of events.parquet; never the live ledger)
 """
 
 from __future__ import annotations
@@ -52,6 +53,7 @@ def connect(
     elo_dir: Path | None = None,
     features_dir: Path | None = None,
     modeling_dir: Path | None = None,
+    ledger_export_dir: Path | None = None,
 ) -> duckdb.DuckDBPyConnection:
     validated = config.paths.validated_dir / "matches"
     if not validated.exists():
@@ -91,7 +93,24 @@ def connect(
             path = modeling_dir / "predictions" / f"{rel}.parquet"
             if path.exists():
                 con.execute(f"CREATE OR REPLACE VIEW {view} AS SELECT * FROM read_parquet('{_sql_path(path)}')")
+    if ledger_export_dir is not None:
+        ledger_views(con, ledger_export_dir)
     return con
+
+
+def ledger_views(con: duckdb.DuckDBPyConnection, export_dir: Path) -> None:
+    """Read-only views over a ledger export (Parquet). The live SQLite ledger is never attached for writing."""
+    if not (export_dir / "events.parquet").exists():
+        return
+    path = _sql_path(export_dir / "events.parquet")
+    con.execute(f"CREATE OR REPLACE VIEW ledger_events AS SELECT * FROM read_parquet('{path}')")
+    con.execute(
+        "CREATE OR REPLACE VIEW ledger_predictions AS SELECT seq, event_id, recorded_at, match_id, mode, "
+        "probability_a, probability_b, json_extract_string(payload, '$.prediction.frozen_hash') AS frozen_hash, "
+        "json_extract_string(payload, '$.match.player_a_id') AS player_a_id, "
+        "json_extract_string(payload, '$.match.player_b_id') AS player_b_id "
+        "FROM ledger_events WHERE event_type = 'PREDICTION_COMMITTED'"
+    )
 
 
 def build_database(config: Config) -> Path:
