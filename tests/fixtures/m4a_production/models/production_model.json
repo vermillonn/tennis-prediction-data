@@ -1,0 +1,74 @@
+{
+  "fit": {
+    "calibration_batches": [
+      "2023-06-10",
+      "2026-06-06"
+    ],
+    "calibration_rows": 8586,
+    "calibrator": {
+      "knots_x": [],
+      "knots_y": [],
+      "method": "raw",
+      "rows": 8586,
+      "slope": 1.0
+    },
+    "coef_original_units": {
+      "decay_missing_diff": -0.9047360387710011,
+      "elo_logit": 0.750832662272877,
+      "rpw_decay_diff": 3.7953776148357425,
+      "rpw_shrunk_diff": -0.8707988601422273,
+      "spw_decay_diff": 4.38358968286204,
+      "spw_shrunk_diff": -0.19440853651791515
+    },
+    "coef_scaled": {
+      "decay_missing_diff": -0.2042744878200123,
+      "elo_logit": 0.7771466025199294,
+      "rpw_decay_diff": 0.14728549795065352,
+      "rpw_shrunk_diff": -0.027447636858488687,
+      "spw_decay_diff": 0.19517580352412828,
+      "spw_shrunk_diff": -0.007129922844877244
+    },
+    "converged": true,
+    "iterations": 5,
+    "last_train_release": "2026-05-30",
+    "scale": {
+      "decay_missing_diff": 0.22578352034865332,
+      "elo_logit": 1.0350463446374274,
+      "rpw_decay_diff": 0.03880654651461546,
+      "rpw_shrunk_diff": 0.03152006521231054,
+      "spw_decay_diff": 0.044524195384249156,
+      "spw_shrunk_diff": 0.036674947368991725
+    },
+    "train_rows": 109027,
+    "training_cutoff_batch": "2026-06-06",
+    "training_rule": "prediction_batch >= 1991-01-01 and release_batch < 2026-06-06"
+  },
+  "frozen_hash": "bc4e5c870c6e21b9a0e085cd6b9ae2555f3e7478da4bfaa88170eb03e1a40041",
+  "model_id": "M4A+raw",
+  "model_version": "m3b-1+engine1",
+  "specification": {
+    "C": 10.0,
+    "calibration": "raw",
+    "calibration_window_years": 3,
+    "derived_features": {
+      "decay_missing_diff": "1[A has no decayed history] - 1[B has none]",
+      "elo_logit": "log(p/(1-p)) of the Phase 2 surface-Elo probability, p clipped to [eps, 1-eps]",
+      "rpw_decay_diff": "52-week decay-weighted RPW, A - B",
+      "rpw_shrunk_diff": "a_rpw_shrunk - b_rpw_shrunk",
+      "spw_decay_diff": "52-week decay-weighted SPW, A - B",
+      "spw_shrunk_diff": "a_spw_shrunk - b_spw_shrunk"
+    },
+    "description": "M1 + recency-weighted (52-week decay) serve/return differences",
+    "epsilon": 1e-06,
+    "experiment": "M4A",
+    "inputs": [
+      "elo_logit",
+      "spw_shrunk_diff",
+      "rpw_shrunk_diff",
+      "spw_decay_diff",
+      "rpw_decay_diff",
+      "decay_missing_diff"
+    ]
+  },
+  "valid_for_prediction_batches_from": "2026-06-06"
+}

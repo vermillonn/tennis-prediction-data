@@ -1,0 +1,65 @@
+# Phase 4A: current-data ingestion, historical backfill and inference readiness for the frozen M4A model.
+# Nothing here changes Elo, feature or model parameters: those are read from the frozen Phase 2-3B artifacts.
+
+modeling_config = "config/modeling.toml"   # locates the feature, Elo and Phase 1 configs as well
+
+[model]
+expected_frozen_hash = "bc4e5c870c6e21b9"  # published Phase 3B frozen M4A hash; any other model is refused
+
+[status]
+# Operational gates, changed only by a reviewed commit. Prospective predictions stay DISABLED until the historical
+# backfill reaches the prospective start (COMPLETE) and a verified provider supplies schedules.
+backfill = "INCOMPLETE"                    # INCOMPLETE | COMPLETE
+prospective_predictions = "DISABLED"       # DISABLED | ENABLED (ENABLED requires backfill = COMPLETE)
+
+[outputs]
+prospective_dir = "data/prospective"      # raw snapshots, identity registry, backfill state (git-ignored)
+reports_dir = "reports/prospective"
+
+[chronology]
+# Frozen historical policy (Phase 2): weekly batches; a result updates state at the close of its release batch.
+# No timestamp-based release policy is enabled in Phase 4A.
+policy = "weekly_batch_v1"
+historical_snapshot_end = "2026-05-25"     # last tournament_date in the pinned archive (Roland Garros 2026; verified by the audit)
+prospective_start = "2026-10-25"           # prospective evidence only for matches starting strictly after this date
+backfill_family = "tour"                   # source family assigned to accepted tour-level backfill rows
+
+[identity]
+policy_version = "id-1"
+new_player_id_base = 9000000               # reserved range for new canonical IDs (archive IDs are < 1,000,000)
+auto_approve_high_confidence = false       # high-confidence name matches need an explicit approval
+accept_unmatched_as_new = true             # a player with no surname candidate at all gets a new canonical ID
+overrides = "config/identity_overrides.toml"
+
+[reconciliation]
+policy_version = "rec-1"
+date_tolerance_days = 7                    # event start dates of the same match may differ by at most this
+# Higher first. The pinned historical archive always wins and is never overwritten.
+precedence = ["historical_archive", "sackmann_csv", "sportradar", "fixture"]
+
+[providers.sportradar]
+base_url = "https://api.sportradar.com/tennis/{access_level}/v3/{language}/{feed}.json"
+access_level = "trial"
+language = "en"
+api_key_env = "SPORTRADAR_API_KEY"
+requests_per_second = 1.0                  # documented trial limit (1 QPS); verify against the account
+max_retries = 4
+backoff_seconds = 2.0
+
+[freshness]
+# Warnings and hard failures for operational reliability. They never change a model probability.
+warn_missing_weeks = 1
+fail_missing_weeks = 4
+warn_result_age_days = 10
+fail_result_age_days = 35
+warn_fit_age_weeks = 5
+fail_fit_age_weeks = 12
+warn_source_age_days = 2
+fail_source_age_days = 14
+fail_unresolved_identities = 1             # any unresolved identity of a predicted player is a hard failure
+warn_player_inactive_weeks = 26
+
+[replay]
+tolerance = 1e-12                          # max |p_replay - p_published|
+cases_per_category = 25
+seed = 20261025

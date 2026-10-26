@@ -48,9 +48,27 @@ def _sorted_unique(col: str) -> pl.Expr:
 def validate(config: Config) -> tuple[pl.DataFrame, pl.DataFrame, dict]:
     """Return (validated, quarantine, context) without writing anything."""
     raw = load_raw(config)
+    players = load_players(config)
+    validated, quarantine = validate_frame(raw, config, players)
+    context = {
+        "players": players,
+        "rankings": load_rankings(config),
+        "source_rows": raw.height,
+        "extra_columns": {f.rel_path: cols for f in raw_match_files(config) if (cols := extra_columns(f))},
+    }
+    return validated, quarantine, context
+
+
+def validate_frame(
+    raw: pl.DataFrame, config: Config, players: pl.DataFrame | None
+) -> tuple[pl.DataFrame, pl.DataFrame]:
+    """Phase 1 normalization and validation of raw source rows (as read by ``read_raw_file``).
+
+    Used by ``validate`` for the archive snapshot and by Phase 4 for authorized new source rows, so both
+    pass exactly the same rules.
+    """
     df = to_canonical(raw, config)
     df = apply_row_rules(df, config)
-    players = load_players(config)
     df = apply_identity_checks(df, players)
     df = detect_duplicates(df, config)
 
@@ -82,13 +100,7 @@ def validate(config: Config) -> tuple[pl.DataFrame, pl.DataFrame, dict]:
         *[pl.col(c).cast(t) for c, t in QUARANTINE_EXTRA.items()],
     )
 
-    context = {
-        "players": players,
-        "rankings": load_rankings(config),
-        "source_rows": raw.height,
-        "extra_columns": {f.rel_path: cols for f in raw_match_files(config) if (cols := extra_columns(f))},
-    }
-    return validated, quarantine, context
+    return validated, quarantine
 
 
 def build(config: Config) -> BuildResult:

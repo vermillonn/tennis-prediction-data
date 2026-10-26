@@ -1,0 +1,14 @@
+{
+  "artifacts": {
+    "models/frozen_model.json": {
+      "bytes": 9551,
+      "sha256": "673e53e43d9212f2d8e726ade0b3249af54224d14f4d32294fd97e8b049939e4"
+    },
+    "models/production_model.json": {
+      "bytes": 2429,
+      "sha256": "24be84b7af161dc5b51b958470d422fb3a2522b91c7c442f9cb2869043a04275"
+    }
+  },
+  "frozen_hash": "bc4e5c870c6e21b9a0e085cd6b9ae2555f3e7478da4bfaa88170eb03e1a40041",
+  "note": "Excerpt of data/modeling/manifest.json (Phase 3B run): checksums of the two frozen M4A artifacts copied here as a CI fixture. Model parameters only; no row-level data."
+}
