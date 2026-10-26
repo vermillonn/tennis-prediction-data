@@ -274,6 +274,10 @@ def main(argv: list[str] | None = None) -> int:
     from tennis_data.ledger.cli import register as register_ledger
 
     register_ledger(sub)
+    from tennis_data.evaluation_prospective.cli import COMMANDS as EVAL_COMMANDS
+    from tennis_data.evaluation_prospective.cli import register as register_eval
+
+    register_eval(sub)
     q = sub.add_parser(
         "query",
         help="run SQL against the DuckDB views (matches, quarantine, player_matches, players, elo_*, serve_return_features, model_*)",
@@ -296,6 +300,10 @@ def main(argv: list[str] | None = None) -> int:
         from tennis_data.ledger.cli import run as run_ledger
 
         handlers[args.command] = lambda a, c: run_ledger(a)
+    if args.command in EVAL_COMMANDS:
+        from tennis_data.evaluation_prospective.cli import run as run_eval
+
+        handlers[args.command] = lambda a, c: run_eval(a)
     try:
         config = load_config(args.config)
         return handlers[args.command](args, config)

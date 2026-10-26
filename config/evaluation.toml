@@ -1,0 +1,66 @@
+# Phase 4C: read-only prospective evaluation, external checkpoint anchoring and independent audit.
+# Nothing here changes the frozen M4A model, the ledger or the Phase 4A status gate. The approved model identity
+# (frozen hash, configuration hash) is read from config/prospective.toml and the frozen modeling configuration.
+
+ledger_config = "config/ledger.toml"
+
+[protocol]
+# Frozen within a protocol version: any change below needs a new version string.
+version = "pe-1"
+cohort_mode = "PROSPECTIVE"                # the only mode scored in the live prospective report
+approved_model_id = "M4A+raw"              # raw (uncalibrated) frozen M4A
+primary_forecast_slot = "pre_match"
+# The first admissible forecast committed for a match in the primary slot is selected, before any outcome is
+# looked at. A voided selection removes the match; a later forecast never replaces it.
+selection_policy = "first_admissible_in_slot"
+require_actual_start_evidence = true       # commitment must precede a sourced actual start
+scored_outcomes = ["COMPLETED"]            # primary match-winner scoring
+retirement_policy = "separate"             # retirements: secondary analysis only, never in the primary score
+outcome_policy = "unanimous_latest_version"  # every current source must agree, else DISPUTED
+probability_clip = 1e-15                   # same clipping as Phase 2/3B scorers, applied to both models
+
+[evaluation]
+calibration_bins = 10
+bootstrap_samples = 2000
+bootstrap_seed = 20261025
+clusters = ["week", "tournament"]
+min_matches_inferential = 200              # below: descriptive only, "insufficient evidence"
+min_blocks_inferential = 10                # resampling blocks needed for an interval
+min_subgroup_matches = 50                  # smaller subgroups: counts only, inference inconclusive
+sample_size_edges = [1, 1000, 5000]        # prior service points, min over both players (Phase 3B buckets)
+elo_experience_edges = [1, 20, 100]        # prior Elo-rated matches, min over both players
+subgroups = ["surface", "tournament_level", "best_of", "prior_service_points", "elo_experience",
+             "probability_range", "freshness", "period"]
+
+[outputs]
+snapshot_dir = "data/evaluation/snapshots"       # content-addressed ledger exports (git-ignored)
+package_dir = "data/evaluation/packages"         # audit packages (git-ignored)
+reports_dir = "reports/evaluation"
+evidence_dir = "data/ledger/anchors"             # published checkpoint records and receipts (git-ignored)
+trusted_checkpoint_dir = "data/ledger/trusted_checkpoints"  # checkpoints an auditor retained earlier
+
+[limits]
+max_export_bytes = 536870912               # 512 MiB
+max_line_bytes = 1048576
+max_outcome_records = 2000000
+max_receipt_bytes = 1048576
+
+# External publication. Nothing is published unless a backend is explicitly enabled here AND credentials are in
+# the named environment variable. Tests never publish.
+[publishers.local_fixture]
+enabled = true                             # deterministic tests only; never counts as external evidence
+root = "data/ledger/fixture_publications"
+
+[publishers.github]
+enabled = false
+repository = ""                            # "owner/repo" of an independently controlled repository
+branch = "ledger-checkpoints"
+path_prefix = "checkpoints"
+token_env = "LEDGER_CHECKPOINT_GITHUB_TOKEN"  # least privilege: contents:write on that repository only
+api_base = "https://api.github.com"
+
+[publishers.rfc3161]
+enabled = false
+tsa_url = ""                               # an RFC 3161 time-stamping authority chosen by the operator
+# Trust anchors are chosen by whoever verifies, never by the evidence: pass --tsa-ca to verification commands.
+trusted_ca_files = []

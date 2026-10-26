@@ -1,0 +1,56 @@
+{
+  "measured_at_commit": "9b0b375",
+  "measured_on": "2026-10-26",
+  "note": "SYNTHETIC ledgers; timings exclude ledger construction; bootstrap 2000 samples",
+  "peak_rss_mb": 705.0,
+  "runs": {
+    "100": {
+      "deterministic": true,
+      "events": 268,
+      "ledger_build_seconds": 0.44,
+      "peak_python_alloc_mb_full_evaluate": 1.4,
+      "predictions": 103,
+      "scorable": 69,
+      "seconds": {
+        "eligibility_classification_incl_reconciliation": 0.012,
+        "full_evaluate": 0.0805,
+        "integrity_verification": 0.0421,
+        "metrics_calibration_uncertainty": 0.0232,
+        "outcome_reconciliation": 0.0078,
+        "report_generation": 0.0005
+      }
+    },
+    "1000": {
+      "deterministic": true,
+      "events": 2702,
+      "ledger_build_seconds": 2.67,
+      "peak_python_alloc_mb_full_evaluate": 13.7,
+      "predictions": 1042,
+      "scorable": 690,
+      "seconds": {
+        "eligibility_classification_incl_reconciliation": 0.1181,
+        "full_evaluate": 0.6541,
+        "integrity_verification": 0.3036,
+        "metrics_calibration_uncertainty": 0.1465,
+        "outcome_reconciliation": 0.0438,
+        "report_generation": 0.0011
+      }
+    },
+    "10000": {
+      "deterministic": true,
+      "events": 26769,
+      "ledger_build_seconds": 29.15,
+      "peak_python_alloc_mb_full_evaluate": 136.6,
+      "predictions": 10235,
+      "scorable": 7099,
+      "seconds": {
+        "eligibility_classification_incl_reconciliation": 2.2047,
+        "full_evaluate": 5.8598,
+        "integrity_verification": 3.3435,
+        "metrics_calibration_uncertainty": 0.6068,
+        "outcome_reconciliation": 0.625,
+        "report_generation": 0.0043
+      }
+    }
+  }
+}
