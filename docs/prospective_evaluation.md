@@ -428,11 +428,11 @@ standard CLI tests need no `data/` directory.
 
 | predictions | events | scorable | integrity | outcome reconciliation | classification (incl. reconciliation) | metrics + calibration + bootstrap | reports | full evaluate | peak Python allocation |
 |---|---|---|---|---|---|---|---|---|---|
-| 103 | 268 | 69 | 0.04 s | 0.006 s | 0.011 s | 0.029 s | 0.001 s | 0.07 s | 1.4 MB |
-| 1,042 | 2,702 | 690 | 0.31 s | 0.05 s | 0.12 s | 0.15 s | 0.001 s | 0.56 s | 13.7 MB |
-| 10,235 | 26,769 | 7,099 | 3.52 s | 0.91 s | 2.21 s | 0.57 s | 0.005 s | 5.65 s | 136.6 MB |
+| 103 | 268 | 69 | 0.04 s | 0.008 s | 0.012 s | 0.023 s | 0.001 s | 0.08 s | 1.4 MB |
+| 1,042 | 2,702 | 690 | 0.30 s | 0.04 s | 0.12 s | 0.15 s | 0.001 s | 0.65 s | 13.7 MB |
+| 10,235 | 26,769 | 7,099 | 3.34 s | 0.63 s | 2.20 s | 0.61 s | 0.004 s | 5.86 s | 136.6 MB |
 
-  Process peak RSS over the whole benchmark was 706 MB. Integrity verification, the Phase 4B verifier, dominates and
+  Process peak RSS over the whole benchmark was 705 MB (`reports/evaluation/benchmark.json`). Integrity verification, the Phase 4B verifier, dominates and
   scales linearly.
 
 ## 15. Remaining operational blockers
