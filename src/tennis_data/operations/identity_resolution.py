@@ -82,7 +82,7 @@ def simulate(cfg, label: str, name: str, additions: dict[str, int]) -> dict:
     conv = json.loads((gap.workspace_dir / "converted.json").read_text())
     doc, held = cb.filter_import(conv, approved)
     (sim / "import.json").write_text(json.dumps(doc, sort_keys=True, default=str) + "\n")
-    v1 = (cb.PROJECT_ROOT / rec["steps"]["approvals"]["approvals_file"]).read_text()
+    v1 = (exports.private_dir(cfg, label) / "approvals_v1.toml").read_text()
     extra = ["# SIMULATION ONLY: proposed, NOT approved"] + [
         f'[[mapping]]\nprovider = "tml_export"\nprovider_player_id = "{p}"\ncanonical_player_id = {c}\n'
         f'reviewer = "PROPOSED (simulation)"\n' for p, c in sorted(additions.items())]  # fmt: skip

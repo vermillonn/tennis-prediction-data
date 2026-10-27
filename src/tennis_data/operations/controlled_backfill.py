@@ -9,8 +9,11 @@ Steps, each verified before the next; any failure stops the run without promotio
    overrides), no indistinguishable namesake in the archive, not a candidate of an ambiguous player, plausible
    chronology, and for the corroborated class at least one confirming and no contradicting overlap match. Failures
    are removed and reported. Explicitly pending: the ``name_country`` mapping, every ambiguous and new player.
-   Approvals are written to a new file (``config/identity_approvals/<label>.toml``) with evidence, class and the
-   authorization reference; the proposed files and ``config/identity_overrides.toml`` are never modified.
+   Version 2 adds an explicit list of **individual overrides** approved by the owner after review; each must pass the
+   separate ``INDIVIDUAL_CHECKS`` (the automatic rule above is not weakened). Approvals are written to a local
+   manifest (``data/operations/exports/<label>/private/approvals_v<N>.toml``, git-ignored: it holds source-derived
+   player codes) with evidence, class and the authorization reference; the proposed files and
+   ``config/identity_overrides.toml`` are never modified.
 2. **Baseline.** ``data/prospective/`` is stored as a content-addressed snapshot (objects by SHA-256 plus a manifest)
    and verified by restoring it into the staging directory and recomputing its state snapshot ID.
 3. **Staging.** The import file keeps only matches whose two players are approved (matches with a pending player are
@@ -22,7 +25,7 @@ Steps, each verified before the next; any failure stops the run without promotio
    prospective start, replay and integrity passed, frozen hashes unchanged, state reconstruction deterministic twice,
    prospective gate still closed, and every file outside ``data/operations`` unchanged.
 5. **Promotion.** Only if every check passes: the staged directory is stored as a new versioned content-addressed
-   snapshot (``historical-v1-<state id>``) and registered next to the baseline. ``data/prospective/`` (the active
+   snapshot (``historical-v<N>-<state id>``) and registered next to the baseline; earlier versions are never touched. ``data/prospective/`` (the active
    Phase 4A directory) is not modified; switching to the new snapshot is a separate owner decision.
 """
 
@@ -48,6 +51,12 @@ MAIN_TOUR_LEVELS = {"A", "D", "G", "M"}
 INVARIANTS = ("proposal_provenance", "provider_in_verified_source", "phase4a_decision", "blocking_flags_clear",
               "names_exact", "birth_date_exact", "one_to_one", "no_indistinguishable_namesake",
               "not_ambiguous_candidate", "chronology", "overlap_corroboration")  # fmt: skip
+INDIVIDUAL_CHECKS = ("provider_in_verified_source", "canonical_in_archive", "birth_date_exact", "one_to_one",
+                     "not_candidate_of_pending", "holds_archive_history", "chronology", "evidence_recorded")  # fmt: skip
+
+
+def run_name(label: str, version: int) -> str:
+    return label if version == 1 else f"{label}-v{version}"
 
 
 # ------------------------------------------------------------------------------------------ content-addressed store
@@ -175,18 +184,71 @@ def select_approvals(review: dict, decisions: dict[str, dict], provider: dict[st
     return {"approved": approved, "rejected": rejected, "pending": pending}
 
 
-def write_approvals(path: Path, approvals: list[dict], label: str) -> str:
+def check_individual(overrides: dict[str, dict], approved: list[dict], decisions: dict[str, dict],
+                     review: dict, provider: dict[str, dict], archive: dict[int, dict], history: dict[int, dict],
+                     first_gap: dict[str, date], existing: dict[tuple, int]) -> list[dict]:  # fmt: skip
+    """Checks for owner-approved individual overrides (provider id -> {canonical_player_id, justification}).
+
+    The candidates of a provider player are its Phase 4A candidates plus those of the review package. A same-birth-
+    date candidate (a duplicate archive record) must not hold more archive matches than the chosen ID, so the
+    mapping never splits history; no archive ID is merged or rewritten.
+    """
+    auto = {e["provider_player_id"]: e["canonical_player_id"] for e in approved}
+    chosen = {pid: o["canonical_player_id"] for pid, o in overrides.items()}
+    used = list(auto.values()) + list(chosen.values()) + list(existing.values())
+    cands = {pid: set(r.get("candidates") or []) for pid, r in decisions.items()}
+    for q in review["ambiguous"]:
+        cands.setdefault(q["provider_player_id"], set()).update(c["id"] for c in q.get("candidates", []))
+    resolved = set(auto) | set(chosen) | {k[1] for k in existing}
+    pending_cands = {c for pid, cs in cands.items() if pid not in resolved for c in cs}
+    pending_cands |= {m["canonical_player_id"] for m in review["mappings"] if m["provider_player_id"] not in resolved}
+    out = []
+    for pid, o in sorted(overrides.items()):
+        cid = o["canonical_player_id"]
+        p, a, h, fg = provider.get(pid, {}), archive.get(cid, {}), history.get(cid, {}), first_gap.get(pid)
+        dob = a.get("birth_date")
+        age = (fg - dob).days / 365.25 if fg and dob else None
+        first_age = (h["first"] - dob).days / 365.25 if h.get("first") and dob else None
+        dup = [c for c in cands.get(pid, set()) - {cid} if archive.get(c, {}).get("birth_date") == dob]
+        checks = {
+            "provider_in_verified_source": pid in provider,
+            "canonical_in_archive": cid in archive,
+            "birth_date_exact": p.get("birth_date") is not None and p.get("birth_date") == dob,
+            "one_to_one": used.count(cid) == 1 and pid not in auto and existing.get(("tml_export", pid), cid) == cid,
+            "not_candidate_of_pending": cid not in pending_cands,
+            "holds_archive_history": all(history.get(c, {}).get("archive_matches", 0) <= h.get("archive_matches", 0)
+                                         for c in dup),
+            "chronology": age is not None and 14 <= age <= 45 and (first_age is None or first_age >= 14),
+            "evidence_recorded": bool(o.get("justification")),
+        }  # fmt: skip
+        out.append({"provider": "tml_export", "provider_player_id": pid, "canonical_player_id": cid,
+                    "evidence_class": "individual_override", "provider_name": p.get("name"),
+                    "archive_name": a.get("name"), "birth_date": str(dob) if dob else None,
+                    "overlap_matches_confirming": o.get("overlap_matches_confirming", 0),
+                    "justification": o["justification"], "authorization": o["authorization"],
+                    "duplicate_archive_records": sorted(dup), "checks": checks,
+                    "failed": [k for k in INDIVIDUAL_CHECKS if not checks[k]]})  # fmt: skip
+    return out
+
+
+def write_approvals(path: Path, approvals: list[dict], label: str, authorization: str = AUTHORIZATION) -> str:
     """Write the approved mappings (new file; refuses to replace a different one). Returns its SHA-256."""
-    lines = [f"# Identity approvals for owner export {label}. Authorization: {AUTHORIZATION}.",
-             "# Each entry passed every invariant in tennis_data.operations.controlled_backfill.INVARIANTS.",
+    lines = [f"# Identity approvals for owner export {label}. Authorization: {authorization}.",
+             "# Automatic entries passed every check in INVARIANTS; individual overrides passed INDIVIDUAL_CHECKS.",
+             "# LOCAL ONLY (git-ignored): source-derived player codes. Never publish.",
              "# Proposed files and config/identity_overrides.toml are unchanged; this file is used together with them.", ""]  # fmt: skip
     for e in sorted(approvals, key=lambda e: e["provider_player_id"]):
-        cls = "overlap_corroborated" if e["evidence_class"] == "overlap_corroborated" else "name_and_birth_date_exact"
-        ev = (f"name '{e['provider_name']}' = archive '{e['archive_name']}' (identity.norm); born {e['birth_date']} "
-              f"(exact); Phase 4A name_dob, single candidate; {e['overlap_matches_confirming']} overlap matches confirm")  # fmt: skip
+        if e.get("justification"):  # individual override: the owner's decision with its recorded evidence
+            cls, ev = "individual_override", e["justification"]
+        else:
+            cls = (
+                "overlap_corroborated" if e["evidence_class"] == "overlap_corroborated" else "name_and_birth_date_exact"
+            )
+            ev = (f"name '{e['provider_name']}' = archive '{e['archive_name']}' (identity.norm); born {e['birth_date']} "
+                  f"(exact); Phase 4A name_dob, single candidate; {e['overlap_matches_confirming']} overlap matches confirm")  # fmt: skip
         lines += ["[[mapping]]", 'provider = "tml_export"', f'provider_player_id = "{e["provider_player_id"]}"',
                   f"canonical_player_id = {e['canonical_player_id']}", f'reviewer = "{REVIEWER}"',
-                  f'approval_class = "{cls}"', f'authorization = "{AUTHORIZATION}"',
+                  f'approval_class = "{cls}"', f'authorization = "{e.get("authorization", AUTHORIZATION)}"',
                   f'note = "{ev.replace(chr(34), chr(39))}"', ""]  # fmt: skip
     text = "\n".join(lines)
     tomllib.loads(text)
@@ -242,13 +304,18 @@ def reconstruct(ws, runs: int = 2) -> dict:
     return out
 
 
-def prepare(cfg, label: str, now: datetime) -> dict:
-    """Steps 1-3: approvals, verified baseline, staged import and the Phase 4A run in staging."""
+def prepare(cfg, label: str, now: datetime, version: int = 1, individual: dict[str, dict] | None = None,
+            authorization: str = AUTHORIZATION) -> dict:  # fmt: skip
+    """Steps 1-3: approvals, verified baseline, staged import and the Phase 4A run in staging.
+
+    ``individual``: owner-approved overrides (version 2 onwards); any failing ``INDIVIDUAL_CHECKS`` stops the run."""
     from tennis_data.prospective.backfill import ingest_file, load_state_snapshot
     from tennis_data.prospective.pipeline import run_phase4a
 
     root = PROJECT_ROOT
-    rec: dict = {"label": label, "authorization": AUTHORIZATION, "started_at": now.isoformat(), "steps": {}}
+    run = run_name(label, version)
+    rec: dict = {"label": label, "run": run, "version": version, "authorization": authorization,
+                 "started_at": now.isoformat(), "steps": {}}  # fmt: skip
     before = data_tree(root)
     rec["data_tree_before"] = _sha(json.dumps(before, sort_keys=True).encode())
     d = exports.export_dir(cfg, label)
@@ -262,7 +329,7 @@ def prepare(cfg, label: str, now: datetime) -> dict:
     # 1. approvals
     gap = exports.export_config(cfg, label, gap_only=True)
     gws = gap.workspace_prospective()
-    review = json.loads((cfg.reports_dir / f"identity_review_{label}.json").read_text())
+    review = json.loads((exports.private_dir(cfg, label) / "identity_review.json").read_text())
     conv = json.loads((gap.workspace_dir / "converted.json").read_text())
     provider = {p["id"]: {"name": _full(p.get("first_name"), p.get("last_name")),
                           "birth_date": date.fromisoformat(str(p["birth_date"])) if p.get("birth_date") else None}
@@ -291,9 +358,20 @@ def prepare(cfg, label: str, now: datetime) -> dict:
     proposed = {str(e["provider_player_id"]): int(e["canonical_player_id"])
                 for e in tomllib.loads(prop_path.read_text()).get("mapping", [])}  # fmt: skip
     sel = select_approvals(review, decisions, provider, archive, history, first_gap, existing, proposed)
-    appr_path = root / "config" / "identity_approvals" / f"{label}.toml"
-    appr_sha = write_approvals(appr_path, sel["approved"], label)
-    rec["steps"]["approvals"] = {"approved": len(sel["approved"]), "rejected": len(sel["rejected"]),
+    ind = check_individual(individual or {}, sel["approved"], decisions, review, provider, archive, history,
+                           first_gap, existing)  # fmt: skip
+    bad = [(e["provider_player_id"], e["failed"]) for e in ind if e["failed"]]
+    if bad:
+        raise RuntimeError(f"individual overrides fail their checks (nothing staged): {bad}")
+    ids = {e["provider_player_id"] for e in ind}
+    sel = {"approved": sel["approved"], "individual": ind,
+           "rejected": [e for e in sel["rejected"] if e["provider_player_id"] not in ids],
+           "rejected_then_individually_approved": [e for e in sel["rejected"] if e["provider_player_id"] in ids],
+           "pending": [e for e in sel["pending"] if e["provider_player_id"] not in ids]}  # fmt: skip
+    appr_path = exports.private_dir(cfg, label) / f"approvals_v{version}.toml"
+    appr_sha = write_approvals(appr_path, sel["approved"] + ind, label, authorization)
+    rec["steps"]["approvals"] = {"approved": len(sel["approved"]), "individual": len(ind),
+                                 "rejected": len(sel["rejected"]),
                                  "pending": len(sel["pending"]), "approvals_file": str(appr_path.relative_to(root)),
                                  "approvals_sha256": appr_sha, "proposed_file_sha256": prop_sha,
                                  "proposed_unchanged": _sha(prop_path.read_bytes()) == prop_sha}  # fmt: skip
@@ -307,7 +385,7 @@ def prepare(cfg, label: str, now: datetime) -> dict:
         "state_snapshot_id": base_state.snapshot_id, "state_components": base_state.components,
         "source": str(prod.prospective_dir.relative_to(root)), "created_at": now.isoformat(),
         "role": "baseline before the controlled historical backfill"})  # fmt: skip
-    run_dir = cfg.workspace_dir / "controlled_backfill" / label
+    run_dir = cfg.workspace_dir / "controlled_backfill" / run
     if run_dir.exists():
         shutil.rmtree(run_dir)  # staging only; never the baseline or promoted snapshots
     staging = run_dir / "staging" / "prospective"
@@ -323,7 +401,7 @@ def prepare(cfg, label: str, now: datetime) -> dict:
         raise RuntimeError(f"baseline verification failed: {b}")
 
     # 3. staging import (approved players only) and the unchanged Phase 4A run
-    approved_ids = {e["provider_player_id"] for e in sel["approved"]}
+    approved_ids = {e["provider_player_id"] for e in sel["approved"] + ind}
     doc, held = filter_import(conv, approved_ids)
     imp = run_dir / "import.json"
     imp.write_text(json.dumps(doc, indent=1, sort_keys=True, default=str) + "\n")
@@ -354,7 +432,7 @@ def verify(cfg, label: str, rec: dict, runs: int = 2) -> dict:
     from tennis_data.prospective.pipeline import PredictionBlocked, check_enabled
 
     root = PROJECT_ROOT
-    run_dir = cfg.workspace_dir / "controlled_backfill" / label
+    run_dir = cfg.workspace_dir / "controlled_backfill" / rec.get("run", label)
     prod = cfg.prospective
     sws = replace(prod, prospective_dir=run_dir / "staging" / "prospective",
                   reports_dir=run_dir / "staging" / "reports",
@@ -419,13 +497,14 @@ def promote(cfg, label: str, rec: dict, now: datetime) -> dict:
 
     if not rec.get("verification", {}).get("passed"):
         raise RuntimeError("verification did not pass: nothing is promoted")
-    run_dir = cfg.workspace_dir / "controlled_backfill" / label
+    version = rec.get("version", 1)
+    run_dir = cfg.workspace_dir / "controlled_backfill" / rec.get("run", label)
     staging = run_dir / "staging" / "prospective"
     store = cfg.workspace_dir / "snapshots"
     sid = rec["phase4a"]["state_snapshot_id"]
-    name = f"historical-v1-{sid}"
+    name = f"historical-v{version}-{sid}"
     man = snapshot_dir(staging, store, name, {
-        "state_snapshot_id": sid, "parent": rec["steps"]["baseline"]["name"], "authorization": AUTHORIZATION,
+        "state_snapshot_id": sid, "parent": rec["steps"]["baseline"]["name"], "authorization": rec["authorization"],
         "label": label, "created_at": now.isoformat(), "approvals_sha256": rec["steps"]["approvals"]["approvals_sha256"],
         "effective_overrides_sha256": rec["steps"]["staging"]["effective_overrides_sha256"],
         "filtered_import_sha256": rec["steps"]["staging"]["filtered_import_sha256"],
@@ -442,7 +521,7 @@ def promote(cfg, label: str, rec: dict, now: datetime) -> dict:
     names = {s["name"] for s in reg["snapshots"]}
     for entry in ({"name": rec["steps"]["baseline"]["name"], "version": 0, "state_snapshot_id": "3253426224f7ebc0",
                    "tree_hash": rec["steps"]["baseline"]["tree_hash"], "active_phase4a_directory": True},
-                  {"name": name, "version": 1, "state_snapshot_id": sid, "tree_hash": man["tree_hash"],
+                  {"name": name, "version": version, "state_snapshot_id": sid, "tree_hash": man["tree_hash"],
                    "parent": rec["steps"]["baseline"]["name"], "active_phase4a_directory": False,
                    "registered_at": now.isoformat()}):  # fmt: skip
         if entry["name"] not in names:
@@ -457,8 +536,9 @@ def promote(cfg, label: str, rec: dict, now: datetime) -> dict:
 
 # ---------------------------------------------------------------------------------------------------------- report
 def match_status(cfg, label: str, rec: dict) -> list[dict]:
-    """Status of every record of the backfill set: accepted (with Elo eligibility) or quarantined (with reason)."""
-    run_dir = cfg.workspace_dir / "controlled_backfill" / label
+    """Status of every record of the backfill set: accepted (with Elo eligibility) or quarantined (with reason).
+    Record-level and source-derived: written only to the export's local ``private`` directory."""
+    run_dir = cfg.workspace_dir / "controlled_backfill" / rec.get("run", label)
     gap = exports.export_config(cfg, label, gap_only=True)
     conv = json.loads((gap.workspace_dir / "converted.json").read_text())
     tours = {t["id"]: t for t in conv["tournaments"]}
@@ -492,7 +572,6 @@ def match_status(cfg, label: str, rec: dict) -> list[dict]:
 def render(cfg, label: str, rec: dict, rows: list[dict]) -> str:
     from collections import Counter
 
-    notes = rejection_notes(cfg, label, rec)
     s, v, ph = rec["steps"], rec["verification"], rec["phase4a"]
     acc = [r for r in rows if r["status"] == "accepted"]
     qua = [r for r in rows if r["status"] != "accepted"]
@@ -502,8 +581,11 @@ def render(cfg, label: str, rec: dict, rows: list[dict]) -> str:
     pend_cls = Counter(p["class"] for p in ident["pending"])
     rcn = v["reconstruction"]
     promo = rec.get("promotion", {})
-    L = [f"# Controlled historical backfill ({label})", "",
-         f"Authorization: {AUTHORIZATION}. Run started {rec['started_at']}. Results only, ATP main tour, frozen weekly "
+    ind = ident.get("individual", [])
+    rti = ident.get("rejected_then_individually_approved", [])
+    version = rec.get("version", 1)
+    L = [f"# Controlled historical backfill, version {version} ({label})", "",
+         f"Authorization: {rec['authorization']}. Run started {rec['started_at']}. Results only, ATP main tour, frozen weekly "
          "batching. Production `data/prospective/` (state `3253426224f7ebc0`) is unchanged; the backfilled state is a "
          "new versioned local snapshot. Gates: backfill INCOMPLETE, prospective predictions DISABLED.", "",
          "## 1. Identity decisions", ""]  # fmt: skip
@@ -512,17 +594,22 @@ def render(cfg, label: str, rec: dict, rows: list[dict]) -> str:
           f"| name and birth date | 103 | {by_cls['name_and_birth_date_only']} | {rej_cls['name_and_birth_date_only']} | "
           f"{pend_cls['name_and_birth_date_only']} (the `name_country` mapping) |",
           f"| ambiguous | 26 | 0 | 0 | {pend_cls['ambiguous']} |", f"| new player | 1 | 0 | 0 | {pend_cls['new_player']} |",
-          "", f"Approvals file: `{s['approvals']['approvals_file']}` (SHA-256 `{s['approvals']['approvals_sha256'][:16]}…`), "
-          "each entry with reviewer, approval class, authorization reference and evidence. The proposed mappings "
+          *([f"| **individual overrides** (owner decision after review) | - | **{len(ind)}** "
+             f"({len(rti)} previously rejected by the automatic rule, {len(ind) - len(rti)} previously ambiguous) | - "
+             "| - |"] if ind else []),
+          "", f"Approval manifest: local and git-ignored (`data/operations/exports/<label>/private/approvals_v{version}"
+          f".toml`, SHA-256 "
+          f"`{s['approvals']['approvals_sha256'][:16]}…`), each entry with reviewer, approval class, authorization "
+          "reference and evidence; it holds source-derived player codes and is not published. The proposed mappings "
           f"(`identity_overrides.proposed.toml`, `{s['approvals']['proposed_file_sha256'][:16]}…`) and "
           "`config/identity_overrides.toml` are unchanged. Invariants: " + ", ".join(f"`{i}`" for i in INVARIANTS)
           + ". Names are compared with `identity.norm` (NFKD accents removed, case-folded, punctuation-insensitive, "
-          "listed letter folds) on `first last`; birth dates must be equal full dates on both sides.", "",
-          "Rejected (removed from the approved set; their matches stay quarantined):", ""]  # fmt: skip
-    L += _tbl(["provider id", "canonical", "name", "born", "class", "failed", "why"],
-              [[e["provider_player_id"], e["canonical_player_id"], e["archive_name"], e["birth_date"],
-                e["evidence_class"].replace("_", " "), ", ".join(e["failed"]), notes.get(e["provider_player_id"], "-")]
-               for e in ident["rejected"]])  # fmt: skip
+          "listed letter folds) on `first last`; birth dates must be equal full dates on both sides."
+          + (" Individual overrides passed " + ", ".join(f"`{i}`" for i in INDIVIDUAL_CHECKS) + "." if ind else ""),
+          "", f"Rejected by the automatic rule and not individually approved: {len(ident['rejected'])}"
+          + (" (" + ", ".join(f"`{k}` {n}" for k, n in sorted(Counter(f for e in ident["rejected"]
+                                                                    for f in e["failed"]).items())) + ")"
+             if ident["rejected"] else "") + ". Per-mapping evidence is kept in the local run record."]  # fmt: skip
     st = Counter(r["status"] for r in rows)
     reasons = Counter(c["class"] for r in qua for c in r.get("pending_players", []))
     L += ["", "## 2. Matches", "", "| item | count |", "|---|---|",
@@ -540,7 +627,8 @@ def render(cfg, label: str, rec: dict, rows: list[dict]) -> str:
           f"| statistics removed (incompatible definition) | {ph['backfill']['reconciliation_notes'][0]['len'] if ph['backfill']['reconciliation_notes'] else 0} "
           f"(state has {ph['backfill']['with_complete_stats']} rows with statistics) |",
           "| excluded | all January–May records (archive period, validation only); `2026_challenger.csv` (never parsed) |",
-          "", f"Per-match status: `reports/operations/controlled_backfill_{label}_matches.json`.", "",
+          "", "Per-match status is record-level and source-derived: it is kept locally "
+          "(`data/operations/exports/<label>/private/`), with its SHA-256 below.", "",
           "## 3. Coverage by batch", ""]  # fmt: skip
     wk: dict = {}
     for r in rows:
@@ -568,12 +656,9 @@ def render(cfg, label: str, rec: dict, rows: list[dict]) -> str:
     pc: dict = {}
     for r in qua:
         for c in r.get("pending_players", []):
-            pc.setdefault((c["id"], c["class"]), 0)
-            pc[(c["id"], c["class"])] += 1
-    L += _tbl(
-        ["provider id", "class", "matches"],
-        [[k[0], k[1], n] for k, n in sorted(pc.items(), key=lambda x: (-x[1], x[0]))],
-    )
+            pc.setdefault(c["class"], {}).setdefault(c["id"], 0)
+            pc[c["class"]][c["id"]] += 1
+    L += _tbl(["class", "players", "match slots"], [[k, len(v), sum(v.values())] for k, v in sorted(pc.items())])
     L += ["", "## 6. State, reproducibility and integrity", "", "| item | value |", "|---|---|",
           f"| baseline (content-addressed, verified by restore) | `{s['baseline']['name']}`, tree `{s['baseline']['tree_hash'][:16]}…`, "
           f"{s['baseline']['files']} files, restored state `{s['baseline']['restored_state_snapshot_id']}` |",
@@ -594,28 +679,9 @@ def render(cfg, label: str, rec: dict, rows: list[dict]) -> str:
     L += [f"- {b}" for b in ph["readiness"]["blockers"]]
     fr = ph["freshness"]["checks"]
     L += ["", "Freshness probe: " + ", ".join(f"`{k}` {c['status']}" for k, c in fr.items()) + ".", ""]
+    if rec.get("matches_sha256"):
+        L += [f"Local per-match status SHA-256: `{rec['matches_sha256']}`.", ""]
     return "\n".join(L)
-
-
-def rejection_notes(cfg, label: str, rec: dict) -> dict[str, str]:
-    """For each rejected mapping, the other Phase 4A candidates that a full birth date cannot exclude."""
-    gws = exports.export_config(cfg, label, gap_only=True).workspace_prospective()
-    dec = pl.read_parquet(gws.prospective_dir / "backfill" / "identity_decisions.parquet")
-    cands = {r["provider_player_id"]: r["candidates"] for r in dec.iter_rows(named=True)}
-    arch = {r["player_id"]: r for r in load_archive_players(gws).iter_rows(named=True)}
-    out = {}
-    for e in rec["identity"]["rejected"]:
-        others = [c for c in cands.get(e["provider_player_id"], []) if c != e["canonical_player_id"]]
-        out[e["provider_player_id"]] = (
-            "other candidates: "
-            + "; ".join(
-                f"{c} {_full(arch[c]['first_name'], arch[c]['last_name'])} ({arch[c]['birth_date'] or 'no birth date'})"
-                for c in others
-            )
-            if others
-            else "-"
-        )
-    return out
 
 
 def _tbl(head, rows):

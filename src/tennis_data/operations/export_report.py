@@ -151,8 +151,7 @@ def render(out: dict, cfg) -> str:
     third = out["crosscheck"].get("vbt_disagreements_in_season", {})
     if dis:
         L.append(
-            f"- ValueBetTennis winner disagreements ({len(dis)}, all retirements): "
-            + "; ".join(f"{x['tournament']} {x['round']} {x['date']} TML `{x['tml_score']}`" for x in dis)
+            f"- ValueBetTennis winner disagreements: {len(dis)}, all retirements"
             + f". The season file has {third.get('matched', 0)} of them and agrees with TML on "
             f"{third.get('winner_agrees', 0)}; {third.get('no_counterpart', 0)} has no counterpart there."
         )
@@ -172,11 +171,10 @@ def render(out: dict, cfg) -> str:
           f"are also corroborated by archive-overlap matches (same pair, round, week, winner) and {ip['uncorroborated']} "
           f"rest on name + birth date only; {ip['contradicted']} contradicted. They are written to the *proposed* "
           "overrides file `data/operations/exports/<label>/identity_overrides.proposed.toml` (reviewer = PENDING; not "
-          "applied). Ambiguous and new players are listed below and are not proposed.", ""]  # fmt: skip
-    L += _t(["provider id", "category", "method", "name", "born", "IOC", "archive candidates"],
-            [[r["provider_player_id"], r["category"], r["method"], r["name"], r["birth_date"] or "-", r["country"] or "-",
-              "; ".join(f"{c['id']} {c['name']} ({c['birth_date'] or '?'})" for c in r["candidates"]) or "-"]
-             for r in out["review_queue"]])  # fmt: skip
+          "applied). Ambiguous and new players are counted below and are not proposed; their player-level rows are "
+          "source-derived records kept in the local `dry_run.json`.", ""]  # fmt: skip
+    rq = Counter((r["category"], r["method"]) for r in out["review_queue"])
+    L += _t(["category", "method", "players"], [[k[0], k[1], n] for k, n in sorted(rq.items())])
     gb = g["backfill"]
     L += ["", "## 7. Dry-run backfill (production configuration, nothing approved)", "",
           f"- Records: {gb['provider_records']:,}; parse errors {gb['parse_errors']}; reconciliation: "

@@ -112,3 +112,48 @@ def test_filter_import_keeps_only_matches_of_approved_players():
     assert [t["id"] for t in doc["tournaments"]] == ["t1"]
     assert held == [{"provider_match_id": "m2", "tournament_id": "t2", "round": "F", "reason": "identity_pending",
                      "pending_players": ["C"]}]  # fmt: skip
+
+
+def _ind_case():
+    dob = date(2000, 1, 1)
+    archive = {1: {"name": "Ann Example", "birth_date": dob}, 2: {"name": "Ann E Example", "birth_date": dob},
+               3: {"name": "Bo Test", "birth_date": dob}, 4: {"name": "Cy Other", "birth_date": dob},
+               5: {"name": "Di Pend", "birth_date": dob}}  # fmt: skip
+    provider = {"A": {"name": "Ann Example", "birth_date": dob}, "B": {"name": "Bo Test", "birth_date": dob},
+                "C": {"name": "Cy Other", "birth_date": date(1999, 1, 1)}, "P": {"name": "Di Pend", "birth_date": dob}}  # fmt: skip
+    decisions = {
+        "A": {"candidates": [1, 2]},
+        "B": {"candidates": [3]},
+        "C": {"candidates": [4]},
+        "P": {"candidates": [5]},
+    }
+    review = {
+        "mappings": [],
+        "ambiguous": [{"provider_player_id": "P", "category": "ambiguous", "candidates": [{"id": 5}]}],
+    }
+    history = {1: {"archive_matches": 30, "first": date(2018, 1, 1)}, 2: {"archive_matches": 0}}
+    gap = {k: date(2026, 7, 1) for k in provider}
+    return decisions, review, provider, archive, history, gap
+
+
+def _ov(cid, why="evidence"):
+    return {"canonical_player_id": cid, "justification": why, "authorization": "test"}
+
+
+def test_check_individual_passes_and_fails_per_check():
+    decisions, review, provider, archive, history, gap = _ind_case()
+    out = cb.check_individual({"A": _ov(1), "B": _ov(3), "C": _ov(4), "P2": _ov(5, "")}, [], decisions, review,
+                              {**provider, "P2": provider["P"]}, archive, history, {**gap, "P2": gap["P"]}, {})  # fmt: skip
+    f = {e["provider_player_id"]: e["failed"] for e in out}
+    assert f["A"] == [] and f["B"] == []  # A: duplicate record 2 has no history, 1 holds it
+    assert f["C"] == ["birth_date_exact"]
+    assert set(f["P2"]) == {"not_candidate_of_pending", "evidence_recorded"}  # 5 is still a pending player's candidate
+
+
+def test_check_individual_never_maps_to_the_record_without_history_or_twice():
+    decisions, review, provider, archive, history, gap = _ind_case()
+    out = cb.check_individual({"A": _ov(2)}, [], decisions, review, provider, archive, history, gap, {})
+    assert out[0]["failed"] == ["holds_archive_history"]  # the same-birth-date record 1 holds the history
+    auto = [{"provider_player_id": "Z", "canonical_player_id": 3}]
+    out = cb.check_individual({"B": _ov(3)}, auto, decisions, review, provider, archive, history, gap, {})
+    assert out[0]["failed"] == ["one_to_one"]

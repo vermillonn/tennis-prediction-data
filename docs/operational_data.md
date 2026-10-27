@@ -236,12 +236,16 @@ Report: `reports/operations/owner_export_<label>.md`. Raw files stay git-ignored
 ## 14. Controlled historical backfill and snapshots
 
 `operations/controlled_backfill.py` implements the owner's authorization of 2026-10-26. Report:
-`reports/operations/controlled_backfill_<label>.md`; per-match status `..._matches.json`.
+`reports/operations/controlled_backfill_<label>.md` (aggregate-only); per-match status and approval manifests are
+kept locally in `data/operations/exports/<label>/private/`.
 
 - **Approvals.** Only overlap-corroborated and exact name+birth-date mappings that pass every invariant in
   `INVARIANTS` are approved; failures are removed and reported with the reason. A Phase 4A candidate that an exact
-  birth date cannot exclude (an undated or same-birth-date archive record) is a conflicting candidate. Approvals go
-  to `config/identity_approvals/<label>.toml` (reviewer, approval class, authorization reference, evidence). The
+  birth date cannot exclude (an undated or same-birth-date archive record) is a conflicting candidate. Version 2
+  adds an explicit list of owner-approved **individual overrides**, each checked by `INDIVIDUAL_CHECKS`; the
+  automatic rule is not weakened. Approvals go to the local manifest
+  `data/operations/exports/<label>/private/approvals_v<N>.toml` (reviewer, approval class, authorization reference,
+  evidence; git-ignored because it holds source-derived player codes). The
   proposed files and `config/identity_overrides.toml` are never modified; staging uses both files together.
 - **Pending players.** Matches involving any pending player (ambiguous, new, `name_country`, rejected) are
   quarantined *before* import, so Phase 4A never assigns a new canonical ID and never merges archive IDs.
@@ -268,3 +272,26 @@ time, so a correction never reaches an earlier forecast. It is **disabled**. Int
 `prospective.pipeline.compute_state_for` (filtering the backfill rows with `as_known_at` before the state is built)
 is a later, reviewed change; `tests/test_authorization_review.py` pins its behaviour at timezone boundaries, with
 delayed ingestion, corrected outcomes and unresolved actual dates.
+
+## 16. Public artifacts and source-derived records
+
+The repository is public. Owner-supplied TennisMyLife files may be used for research under their terms, but raw
+redistribution is prohibited without authorization and the publication of record-level derived data is unclear.
+Rules for this branch:
+
+- **Public** (`reports/`, `docs/`, `config/`): aggregates (counts by level, batch, event, category), hashes,
+  provenance, methods and verification results.
+- **Local only** (`data/operations/exports/<label>/private/`, git-ignored): identity packages, approval manifests,
+  per-match status, player-level review tables and anything with provider codes, names with birth dates, match
+  identifiers or score strings. Generators write these files there; `ops-reports`, `ops-export-dry-run`,
+  `authorization_review` and `controlled_backfill` render only aggregates publicly.
+- Synthetic test fixtures (invented players, codes and dates) are not source data and stay in `tests/`.
+
+History: the unmerged Phase 5A branch was rebuilt on 2026-10-27 so that no reachable commit contains the earlier
+record-level files. Objects that were public before the rewrite may still be retrievable by commit hash, through
+caches or third-party mirrors; the rewrite limits further exposure but does not guarantee erasure.
+
+Reproduction: rerun the generators against the locally registered export (`tennis-data ops-register-export`, then
+`ops-export-dry-run`, `python -m tennis_data.operations.authorization_review`, `controlled_backfill`), which recreate
+the local record-level files and the public aggregate reports; the SHA-256 values in the public reports identify the
+local files.

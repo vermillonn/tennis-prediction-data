@@ -181,8 +181,8 @@ def statistical_compatibility(res, meta, cfg) -> str:
         ["event", "matched", "with differences", "share"],
         [[e["event"], e["matches"], e["core_mismatches"], f(e["share"], 2)] for e in c["events_with_mismatches"]],
     )
-    L += ["", "- Winner disagreements: " + ("; ".join(f"{w['tournament']} {w['round']}: TML `{w['candidate_score']}` "
-          f"vs archive `{w['archive_score']}`" for w in c["winner_disagreements"]) or "none") + ".",
+    L += ["", f"- Winner disagreements: {len(c['winner_disagreements'])} (record-level details stay in the local "
+          "`results.json`).",
           "- Agreement by status (completed / retired) is in `results.json` (`fields_by_status`).", "",
           "## Verdict", "",
           f"**Statistics compatible: {c['statistics_compatible']}.** The large differences sit in a few events, "
@@ -221,11 +221,13 @@ def identity_status(res, meta) -> str:
           "append-only, so the error would have persisted. Phase 4A identity now also searches names written in "
           "another order, and the same birth date with a related name, and holds such players as **ambiguous** "
           "(`name_order_or_spelling_variant`). Regression tests: `tests/test_identity_regressions.py`.", "",
-          "## Review queue (ambiguous and new players; nothing is approved automatically)", ""]  # fmt: skip
-    L += tbl(["provider id", "category", "method", "TML name", "born", "IOC", "archive candidates"],
-             [[r["provider_player_id"], r["category"], r["method"], r["name"], r["birth_date"] or "-", r["country"] or "-",
-               "; ".join(f"{c['id']} {c['name']} ({c['birth_date'] or '?'}, {c['country'] or '?'})" for c in r["candidates"])
-               or "-"] for r in idn["review_queue"]])  # fmt: skip
+          "## Review queue (ambiguous and new players; nothing is approved automatically)", "",
+          "Counts only: player-level rows (provider codes, names, birth dates, candidates) are source-derived records "
+          "and stay in the local `results.json`.", ""]  # fmt: skip
+    q = {}
+    for r in idn["review_queue"]:
+        q[(r["category"], r["method"])] = q.get((r["category"], r["method"]), 0) + 1
+    L += tbl(["category", "method", "players"], [[k[0], k[1], n] for k, n in sorted(q.items())])
     L += [
         "",
         "## Next actions",

@@ -38,6 +38,12 @@ def export_dir(cfg, label: str) -> Path:
     return cfg.workspace_dir / "exports" / label
 
 
+def private_dir(cfg, label: str) -> Path:
+    """Git-ignored local storage for record-level, source-derived outputs of an export (identity packages, approval
+    manifests, per-match status). Public reports carry only aggregates, hashes and provenance."""
+    return export_dir(cfg, label) / "private"
+
+
 def export_config(cfg, label: str, gap_only: bool = False):
     """Operations config for one export: its own workspace and TML input set; Phase 4A outputs stay untouched.
 
