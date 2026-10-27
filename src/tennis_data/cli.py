@@ -3,7 +3,9 @@
 from __future__ import annotations
 
 import argparse
+import json
 import sys
+from datetime import date
 
 from tennis_data.config import ConfigError, load_config
 from tennis_data.ingestion.fetch import IngestionError, describe, ingest, verify_raw
@@ -210,6 +212,16 @@ def _ledger_export_dir():
     return PROJECT_ROOT / rel
 
 
+def _cmd_predict_experimental(args, config) -> int:
+    from tennis_data.prospective.config import load_prospective_config
+    from tennis_data.prospective.experimental import predict_match, render
+
+    res = predict_match(load_prospective_config(args.prospective_config), args.player_a, args.player_b, args.surface,
+                        args.date, event_start=args.event_start)  # fmt: skip
+    print(json.dumps(res, indent=1, default=str) if args.json else render(res))
+    return 0
+
+
 def _cmd_query(args, config) -> int:
     from tennis_data.storage.query import connect
 
@@ -270,6 +282,15 @@ def main(argv: list[str] | None = None) -> int:
                 default="prospective",
                 choices=["prospective", "exploratory_retrospective", "historical_reconstruction"],
             )
+    ex = sub.add_parser("predict-experimental", help="EXPERIMENTAL single-match M4A probability for personal research "
+                        "(not a prospective forecast; never written to the ledger)")  # fmt: skip
+    ex.add_argument("--player-a", required=True, help="full name, unique surname or ATP player ID")
+    ex.add_argument("--player-b", required=True, help="full name, unique surname or ATP player ID")
+    ex.add_argument("--surface", required=True, choices=["Hard", "Clay", "Grass", "Carpet"])
+    ex.add_argument("--date", required=True, type=date.fromisoformat, help="match date, YYYY-MM-DD")
+    ex.add_argument("--event-start", type=date.fromisoformat, help="tournament start date (default: --date)")
+    ex.add_argument("--json", action="store_true", help="print the full result as JSON")
+    ex.add_argument("--prospective-config", help="config/prospective.toml by default")
     from tennis_data.ledger.cli import COMMANDS as LEDGER_COMMANDS
     from tennis_data.ledger.cli import register as register_ledger
 
@@ -298,7 +319,7 @@ def main(argv: list[str] | None = None) -> int:
         "features-build": _cmd_features_build, "features-docs": _cmd_features_docs,
         "model-backtest": _cmd_model_backtest, "prospective-import": _cmd_prospective_import,
         "prospective-backfill": _cmd_prospective_backfill, "prospective-run": _cmd_prospective_run,
-        "prospective-predict": _cmd_prospective_predict,
+        "prospective-predict": _cmd_prospective_predict, "predict-experimental": _cmd_predict_experimental,
     }  # fmt: skip
     if args.command in LEDGER_COMMANDS:
         from tennis_data.ledger.cli import run as run_ledger

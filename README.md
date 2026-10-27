@@ -249,6 +249,8 @@ Methodology by phase:
 - [prospective evaluation](docs/prospective_evaluation.md)
 - [operational data](docs/operational_data.md)
 - [dashboard](docs/dashboard.md)
+- [experimental single-match predictions](docs/experimental_predictions.md) (personal research; labelled
+  EXPERIMENTAL, never a prospective forecast)
 
 ## Licensing and attribution
 
