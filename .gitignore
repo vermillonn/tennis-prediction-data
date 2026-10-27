@@ -6,3 +6,5 @@ data/
 *.duckdb.wal
 reports/**/details/
 reports/details/
+# Source-derived identity approval manifests stay local (data/operations/exports/<label>/private/)
+config/identity_approvals/

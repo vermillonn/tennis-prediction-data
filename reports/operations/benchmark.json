@@ -1,0 +1,62 @@
+{
+  "benchmark": {
+    "measured_on": "2026-10-26",
+    "peak_rss_mb": 358.0,
+    "readiness_evaluation_seconds": 0.0,
+    "real_tml_snapshot": {
+      "compatibility_study_seconds": 0.2113,
+      "conversion_records_per_second": 32288,
+      "conversion_seconds": 0.0979,
+      "identity_resolution_seconds": 1.1287,
+      "parse_store_seconds": 0.0672,
+      "players": 459,
+      "records": 3161,
+      "schema_validation_seconds": 0.0282
+    },
+    "synthetic_schedule_normalization": {
+      "1000": {
+        "fixtures": 1000,
+        "fixtures_per_second": 49505,
+        "identity_seconds": 1.5415,
+        "normalize_seconds": 0.0202
+      },
+      "10000": {
+        "fixtures": 10000,
+        "fixtures_per_second": 157729,
+        "identity_seconds": 1.318,
+        "normalize_seconds": 0.0634
+      }
+    }
+  },
+  "measured_on": "2026-10-26",
+  "note": "wall-clock operational metadata; real TML snapshot c5537ee and synthetic schedule fixtures (labelled)",
+  "ops_run_peak_rss_mb": 734.8,
+  "ops_run_stage_seconds": {
+    "compatibility_study": 0.13,
+    "conversion": 0.19,
+    "gap_audit": 0.03,
+    "model_integrity": 0.02,
+    "phase4a_backfill_identity_reconciliation_validation": 3.98
+  },
+  "state_reconstruction": {
+    "deterministic": true,
+    "peak_rss_mb": 1894.5,
+    "runs": [
+      {
+        "elo_configuration_hash": "1c330d4db8801ff6",
+        "feature_configuration_hash": "3d889b94456995d1",
+        "rows": 193634,
+        "seconds": 228.8,
+        "state_table_hash": "e06edadec5eca47a"
+      },
+      {
+        "elo_configuration_hash": "1c330d4db8801ff6",
+        "feature_configuration_hash": "3d889b94456995d1",
+        "rows": 193634,
+        "seconds": 230.9,
+        "state_table_hash": "e06edadec5eca47a"
+      }
+    ],
+    "state_snapshot_id": "2fe76f1318b590b7"
+  }
+}

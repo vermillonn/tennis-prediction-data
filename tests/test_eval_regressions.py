@@ -79,7 +79,9 @@ def test_corrupted_revoked_or_unverifiable_timestamps_fail_closed(tmp_path, monk
     monkeypatch.undo()
     # token bytes altered while the receipt still names the original hash
     tok = ev / rec["receipt"]["token_file"]
-    tok.write_bytes(tok.read_bytes()[:-1] + b"\x00")
+    raw = tok.read_bytes()
+    tok.write_bytes(raw[:-1] + bytes([raw[-1] ^ 0xFF]))  # always changes the bytes (a 0x00 last byte made it a no-op)
+    assert tok.read_bytes() != raw
     v = anchoring.verify_anchor(rec, snap, evidence_dir=ev, tsa_ca_files=[tsa.ca])
     assert v["level"] == "INVALID" and v["receipt_status"] == "token_hash_differs"
     # garbage token whose hash the (forged) receipt matches: unreadable, not timestamped

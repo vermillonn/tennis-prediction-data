@@ -1,0 +1,17 @@
+# Prospective state-availability safeguard (Phase 5A proposal; NOT active).
+#
+# Separately versioned from the frozen weekly batching (config/elo.toml [chronology], weekly_batch_v1), which stays
+# unchanged for the archive, M4A and every historical evaluation. When enabled (owner decision), it would only restrict
+# which results may enter the player state used by a *prospective* forecast: a result is used only if it was known to
+# be available before the forecast was created. It never makes a result available earlier than the frozen policy.
+[policy]
+version = "state_availability_v1"
+enabled = false
+# A dated result is never treated as available before 00:00 UTC this many days after its match date
+# (the match day ends by 12:00 UTC the next day in UTC-12; late sessions can run past local midnight).
+match_day_buffer_days = 2
+# A result without a match date: not before 00:00 UTC this many days after the start of its frozen release batch
+# (the longest overrun measured on the 2026 export is 10 days, Chengdu: release batch 2026-09-19, final 2026-09-29).
+undated_after_release_batch_days = 21
+# Ingestion recorded more than this many days before the match date is impossible: the row is excluded.
+ingest_before_match_tolerance_days = 1
