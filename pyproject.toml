@@ -22,6 +22,10 @@ build-backend = "hatchling.build"
 packages = ["src/tennis_data"]
 
 [dependency-groups]
+dashboard = [
+    "plotly>=5.24",
+    "streamlit>=1.40",
+]
 dev = [
     "pytest>=8",
     "scipy>=1.17.1",
