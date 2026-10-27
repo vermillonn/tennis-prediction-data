@@ -55,7 +55,7 @@ def delta_bars(df: pl.DataFrame, label: str, d: str, lo: str | None, hi: str | N
                       + "<extra></extra>"))  # fmt: skip
     fig.add_vline(x=0, line=dict(color="#1f2933", width=1))
     _style(fig, title, height=max(260, 46 * df.height + 90))
-    fig.update_xaxes(title="Log-loss difference, M4A − surface Elo (left of 0 = M4A better)")
+    fig.update_xaxes(title="Δ log loss, M4A − Elo (negative favours M4A)")
     fig.update_yaxes(autorange="reversed")
     return fig
 

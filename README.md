@@ -313,8 +313,9 @@ builds directly. Parquet bytes depend on the Polars version, which `uv.lock` pin
   rows, all derived from the data and shared under the same license. The research dashboard's dataset
   (`dashboard/data/`: historical model predictions and point-in-time player indicators) is derived from the same
   archive and shared under CC BY-NC-SA 4.0 with a data card; it contains nothing from other licensed sources.
-- **Code:** written for this project, separate from the data license. A code license has not been chosen yet;
-  the repository owner should add one.
+- **Code:** the original software, tests and documentation are released under the **MIT License** (`LICENSE`).
+  The MIT license covers the code only: it grants no rights over the data, which stays under CC BY-NC-SA 4.0
+  (non-commercial, share-alike; see `LICENSE-DATA.md`).
 
 ## Limitations
 

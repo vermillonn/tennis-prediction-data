@@ -40,7 +40,10 @@ with st.sidebar:
                    f"Dataset built {man['built_at'][:10]}")  # fmt: skip
     else:
         st.caption("Public dashboard dataset not found: aggregate mode.")
-    st.caption("Data: Jeff Sackmann, CC BY-NC-SA 4.0  \nResearch only, not betting advice.")
+    st.caption(
+        "Data: Jeff Sackmann, CC BY-NC-SA 4.0 (non-commercial)  \nCode: MIT (software only)  \n"
+        "Research only, not betting advice."
+    )
 
 try:
     sections.SECTIONS[section]()

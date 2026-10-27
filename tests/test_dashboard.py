@@ -237,3 +237,80 @@ def test_app_runs_in_aggregate_mode_without_the_dataset(tmp_path, monkeypatch):
         if section == "Match explorer":
             assert any("public dashboard dataset" in i.value for i in at.info)
     st.cache_data.clear()
+
+
+# ------------------------------------------------------------------------------------------- interactions
+def _index(pid: int) -> int:
+    """Position of a player in the explorer/comparison pickers (options sorted by name)."""
+    opts = D.player_options(D.load_players())
+    return opts["player_id"].to_list().index(pid)
+
+
+def _explorer_ids(preds) -> list[int]:
+    return sorted(set(preds["player_a_id"].to_list()) | set(preds["player_b_id"].to_list()))
+
+
+def _explorer_index(preds, pid: int) -> int:
+    opts = D.player_options(D.load_players().filter(pl.col("player_id").is_in(_explorer_ids(preds))))
+    return 1 + opts["player_id"].to_list().index(pid)  # 0 is "All players"
+
+
+def test_explorer_player_filter_and_empty_state(preds):
+    pid = int(preds.group_by("player_a_id").len().sort("len", descending=True)["player_a_id"][0])
+    at = _run("Match explorer")
+    at.selectbox(key="ex_player").set_value(_explorer_index(preds, pid)).run()
+    assert not at.exception
+    expected = D.filter_predictions(preds, player_ids=[pid]).height
+    shown = next(m for m in at.metric if m.label == "Matches").value
+    assert shown == f"{expected:,}"
+    table = at.dataframe[0].value
+    assert "opponent" in table.columns and set(table["result"]) <= {"Won", "Lost"}
+    # a player whose recorded predictions all start after 2015, filtered to 2002: the explicit empty state
+    seasons = pl.concat([preds.select(pl.col("player_a_id").alias("p"), "season"),
+                         preds.select(pl.col("player_b_id").alias("p"), "season")])  # fmt: skip
+    modern = (seasons.group_by("p").agg(pl.col("season").min().alias("first"), pl.len().alias("n"))
+              .filter(pl.col("first") > 2015).sort("n", descending=True)["p"][0])  # fmt: skip
+    at.selectbox(key="ex_player").set_value(_explorer_index(preds, int(modern))).run()
+    at.slider(key="ex_years").set_value((2002, 2002)).run()
+    assert not at.exception
+    assert any("No recorded predictions match these filters" in i.value for i in at.info)
+
+
+def test_explorer_surface_filter_changes_the_sample(preds):
+    at = _run("Match explorer")
+    at.multiselect(key="ex_surf").set_value(["Grass"]).run()
+    shown = next(m for m in at.metric if m.label == "Matches").value
+    assert shown == f"{D.filter_predictions(preds, surfaces=['Grass']).height:,}"
+
+
+def test_comparison_dates_and_players_are_coherent(snap):
+    at = _run("Player comparison")
+    assert at.date_input(key="cmp_date").value == snap["tournament_date"].max()  # default: last archive event
+    a = at.selectbox(key="cmp_a").value
+    at.selectbox(key="cmp_b").set_value(a).run()
+    assert any("Choose two different players" in w.value for w in at.warning)
+    # two players who had not played yet on the chosen date: an explicit empty state, never a guess
+    young = D.load_players().filter(pl.col("first_match") > date(2015, 1, 1)).sort("matches", descending=True)
+    p1, p2 = young["player_id"].to_list()[:2]
+    at = _run("Player comparison")
+    at.date_input(key="cmp_date").set_value(date(2000, 1, 3)).run()
+    at.selectbox(key="cmp_a").set_value(_index(p1)).run()
+    at.selectbox(key="cmp_b").set_value(_index(p2)).run()
+    assert not at.exception
+    assert any("Neither player has a recorded tour-level match" in i.value for i in at.info)
+
+
+def test_walk_forward_and_production_model_are_distinguished():
+    for section in ("Match explorer", "Model evaluation"):
+        at = _run(section)
+        assert any("annual walk-forward refits" in c.value and "production model" in c.value for c in at.caption)
+    at = _run("Overview")
+    assert any("walk-forward refits" in c.value for c in at.caption)
+
+
+def test_no_section_implies_a_live_prediction():
+    for section in SECTIONS:
+        at = _run(section)
+        assert any("unavailable" in m.value for m in at.sidebar.markdown)
+        for m in at.metric:
+            assert "live" not in m.label.lower() and "today" not in m.label.lower()

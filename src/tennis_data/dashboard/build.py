@@ -54,6 +54,24 @@ def _validated(root: Path) -> pl.DataFrame:
     return pl.concat([pl.read_parquet(f, columns=cols) for f in files], how="vertical_relaxed")
 
 
+def _tree_hash(d: Path) -> dict:
+    files = sorted(p for p in d.rglob("*.parquet"))
+    h = hashlib.sha256()
+    for p in files:
+        h.update(p.relative_to(d).as_posix().encode() + b"\0" + _sha(p).encode() + b"\0")
+    return {"files": len(files), "sha256": h.hexdigest()}
+
+
+def _input_hashes(root: Path) -> dict:
+    """Exact inputs (SHA-256), so every published value can be traced to the research outputs that produced it."""
+    d = root / "data"
+    return {"modeling/predictions/selected.parquet": _sha(d / "modeling" / "predictions" / "selected.parquet"),
+            "elo/predictions/model_name=surface_elo/part-0.parquet":
+                _sha(d / "elo" / "predictions" / "model_name=surface_elo" / "part-0.parquet"),
+            "features/serve_return": _tree_hash(d / "features" / "serve_return"),
+            "validated/matches": _tree_hash(d / "validated" / "matches")}  # fmt: skip
+
+
 def build_predictions(root: Path, matches: pl.DataFrame) -> pl.DataFrame:
     sel = pl.read_parquet(root / "data" / "modeling" / "predictions" / "selected.parquet")
     sel = sel.filter(pl.col("model_id") == "M4A+raw")
@@ -189,6 +207,7 @@ def main(argv=None) -> int:
         "coverage": {"predictions": [str(preds["tournament_date"].min()), str(preds["tournament_date"].max())],
                      "snapshots": [str(snap["tournament_date"].min()), str(snap["tournament_date"].max())]},
         "built_from_date": str(date.today()),
+        "inputs": _input_hashes(root),
     }  # fmt: skip
     (OUT / "manifest.json").write_text(json.dumps(manifest, indent=1, sort_keys=True) + "\n")
     print(json.dumps({k: manifest[k] for k in ("files", "coverage", "tests_collected_at_build")}, indent=1))

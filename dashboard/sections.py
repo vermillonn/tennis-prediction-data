@@ -15,6 +15,11 @@ RETRO = ("**Retrospective research results.** Every number here comes from histo
          "reconstructions on the ATP archive. They are not independently validated prospective performance: the "
          "development period was used to select the model and the later period was seen while building the Elo "
          "baseline. No prediction on this site is a live forecast.")  # fmt: skip
+WALK_FORWARD = ("**Historical forecasts vs the production model.** These predictions come from annual walk-forward "
+                "refits of the frozen M4A specification: each season is predicted by a fit trained only on earlier "
+                "results (its training cutoff is shown per match). The single frozen production model "
+                "(`bc4e5c870c6e21b9`) was fit on all results before 2026-06-06 and has no out-of-sample history; "
+                "it is not what produced these numbers.")  # fmt: skip
 
 
 # --------------------------------------------------------------------------------------------------- cached data
@@ -46,6 +51,11 @@ def manifest() -> dict | None:
 @st.cache_data(show_spinner=False)
 def status() -> dict | None:
     return D.load_status()
+
+
+def plot(fig) -> None:
+    """Interactive chart without Plotly's toolbar (it covers chart titles on touch screens)."""
+    st.plotly_chart(fig, config={"displayModeBar": False, "displaylogo": False})
 
 
 def missing_dataset(what: str) -> None:
@@ -183,7 +193,8 @@ def overview() -> None:
         "SHA-256 of every dashboard data file matches its manifest.",
     )
     st.caption("Data: Jeff Sackmann's ATP archive, CC BY-NC-SA 4.0. Derived data in this dashboard is shared under "
-               "the same licence for non-commercial research use. Not for betting or any decision with "
+               "the same licence for non-commercial research use. The software is MIT-licensed; that licence covers the code only, "
+               "not the data. Not for betting or any decision with "
                "financial consequences.")  # fmt: skip
 
 
@@ -193,6 +204,7 @@ def explorer() -> None:
     st.caption("Every row is a prediction the frozen evaluation actually recorded before the match, using only "
                "results released before its weekly batch. Matches without eligible features have no prediction and "
                "do not appear.")  # fmt: skip
+    st.caption(WALK_FORWARD)
     df, pl_ = predictions(), players()
     if df is None or pl_ is None:
         missing_dataset("The match explorer")
@@ -293,13 +305,13 @@ def explorer() -> None:
     t1, t2, t3, t4 = st.tabs(["Confidence", "Accuracy by confidence", "M4A vs Elo", "Largest misses"])
     conf = D.confidence(sub)
     with t1:
-        st.plotly_chart(charts.confidence_hist(conf, "How confident were the models?"))
+        plot(charts.confidence_hist(conf, "How confident were the models?"))
         st.caption("Probability each model gave to the player it favoured. M4A is more spread out than Elo.")
     with t2:
-        st.plotly_chart(charts.accuracy_by_confidence(conf, "Did the favourite win as often as predicted?"))
+        plot(charts.accuracy_by_confidence(conf, "Did the favourite win as often as predicted?"))
         st.caption("Points on the dotted line mean the stated confidence matched the observed win rate.")
     with t3:
-        st.plotly_chart(charts.probability_scatter(sub, "M4A against surface Elo, match by match"))
+        plot(charts.probability_scatter(sub, "M4A against surface Elo, match by match"))
         st.caption("Each point is a match (sampled above 6,000). Distance from the diagonal shows where the serve "
                    "and return inputs moved M4A away from Elo.")  # fmt: skip
     with t4:
@@ -391,9 +403,9 @@ def comparison() -> None:
     hist = {names.get(p, str(p)): D.rating_history(snap, p, as_of) for p in (a, b)}
     t1, t2 = st.tabs(["Global Elo history", f"{surface} Elo history"])
     with t1:
-        st.plotly_chart(charts.rating_lines(hist, "elo_global", "Global Elo entering each match"))
+        plot(charts.rating_lines(hist, "elo_global", "Global Elo entering each match"))
     with t2:
-        st.plotly_chart(
+        plot(
             charts.rating_lines(
                 {k: v.filter(pl.col("surface") == surface) for k, v in hist.items()},
                 "elo_surface",
@@ -444,6 +456,7 @@ def evaluation() -> None:
                "regularisation; the exploratory period (2010–2026) was seen while the Elo baseline was built. "
                "Treat these results as careful in-sample-period evidence. Intervals come from the published weekly "
                "block bootstrap; nothing here claims significance beyond them.", icon=":material/science:")  # fmt: skip
+    st.caption(WALK_FORWARD)
     pub = published()
     rows = D.headline(pub)
     if not rows:
@@ -454,11 +467,11 @@ def evaluation() -> None:
     st.subheader("Headline metrics (as published)")
     c = st.columns(3)
     with c[0]:
-        st.plotly_chart(charts.metric_bars(rows, "log_loss", "Log loss (lower is better)"))
+        plot(charts.metric_bars(rows, "log_loss", "Log loss (lower is better)"))
     with c[1]:
-        st.plotly_chart(charts.metric_bars(rows, "brier", "Brier score (lower is better)"))
+        plot(charts.metric_bars(rows, "brier", "Brier score (lower is better)"))
     with c[2]:
-        st.plotly_chart(charts.metric_bars(rows, "accuracy", "Accuracy (higher is better)", ".1%"))
+        plot(charts.metric_bars(rows, "accuracy", "Accuracy (higher is better)", ".1%"))
     st.dataframe(pl.DataFrame([{"period": D.PHASES[r["phase"]], "matches": r["matches"],
                                 "Δ log loss": round(r["d_log_loss"], 5), "95% CI": D.fmt_ci(r["ll_ci95"], 5),
                                 "Δ Brier": round(r["d_brier"], 5), "95% CI ": D.fmt_ci(r["brier_ci95"], 5),
@@ -474,7 +487,7 @@ def evaluation() -> None:
     cal = pub["calibration"].get(phase)
     if cal is not None:
         curves = {"M4A": cal.filter(pl.col("model") == "M4A+raw"), "Surface Elo": cal.filter(pl.col("model") == "M0")}
-        st.plotly_chart(charts.reliability(curves, f"Reliability diagram, {phase} period"))
+        plot(charts.reliability(curves, f"Reliability diagram, {phase} period"))
         st.caption(
             "Each point is a 0.1-wide probability bin; marker size grows with the number of matches. Points "
             "on the diagonal are perfectly calibrated."
@@ -493,7 +506,7 @@ def evaluation() -> None:
                     st.caption("No subgroup published for this period.")
                     continue
                 g = g.with_columns(pl.format("{} (n={})", "level", "n").alias("label"))
-                st.plotly_chart(charts.delta_bars(g, "label", "d_M4A+raw", "lo_M4A+raw", "hi_M4A+raw",
+                plot(charts.delta_bars(g, "label", "d_M4A+raw", "lo_M4A+raw", "hi_M4A+raw",
                                                   f"Log-loss difference by {group.replace('_', ' ')}, {phase}"))  # fmt: skip
         st.caption("Bars show M4A − surface Elo with published 95% block-bootstrap intervals. Small groups have wide "
                    "intervals; overlapping zero means no clear difference in that group. Much of the gain is a "
@@ -508,7 +521,7 @@ def evaluation() -> None:
         tbl += [{"label": f"{r['period']} (exploratory)", "n": r["rows"], "d": r["d"], "lo": r["lo"], "hi": r["hi"]}
                 for r in per.iter_rows(named=True)]  # fmt: skip
     if tbl:
-        st.plotly_chart(charts.delta_bars(pl.DataFrame(tbl), "label", "d", "lo", "hi", "Log-loss difference by period"))
+        plot(charts.delta_bars(pl.DataFrame(tbl), "label", "d", "lo", "hi", "Log-loss difference by period"))
     st.subheader("Paired comparison on the recorded predictions")
     df = predictions()
     if df is None:
@@ -540,7 +553,7 @@ def evaluation() -> None:
         "matches, mostly players with little rating history; in most matches the two probabilities are close.",
     )
     kpi(c[3], "ECE M4A / Elo", f"{m['p_m4a']['ece']:.4f} / {m['p_elo']['ece']:.4f}")
-    st.plotly_chart(charts.cumulative_delta(p, "Paired log-loss difference by season"))
+    plot(charts.cumulative_delta(p, "Paired log-loss difference by season"))
     st.caption("Computed from the published prediction records with the project's scorer. With no filters the "
                "values reproduce the published report exactly (verified by the test suite). Point estimates only: "
                "subsets have no bootstrap interval here.")  # fmt: skip
@@ -571,7 +584,7 @@ def data_status() -> None:
     st.subheader("Historical coverage")
     snap, man, stt = snapshots(), manifest(), status()
     if snap is not None:
-        st.plotly_chart(charts.coverage_bars(D.season_coverage(snap), "Tour-level matches per season (1991 onward)",
+        plot(charts.coverage_bars(D.season_coverage(snap), "Tour-level matches per season (1991 onward)",
                                              highlight=(2002, 2026)))  # fmt: skip
         st.caption("Blue seasons are inside the M4A evaluation (2002–2026). The archive itself starts in 1968; match "
                    "statistics start in 1991. 2020 is short because of the pandemic suspension; 2026 runs to Roland "
