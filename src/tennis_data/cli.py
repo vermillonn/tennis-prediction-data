@@ -217,7 +217,7 @@ def _cmd_predict_experimental(args, config) -> int:
     from tennis_data.prospective.experimental import predict_match, render
 
     res = predict_match(load_prospective_config(args.prospective_config), args.player_a, args.player_b, args.surface,
-                        args.date, event_start=args.event_start)  # fmt: skip
+                        args.date, event_start=args.event_start, state_version=args.state_version)  # fmt: skip
     print(json.dumps(res, indent=1, default=str) if args.json else render(res))
     return 0
 
@@ -289,6 +289,8 @@ def main(argv: list[str] | None = None) -> int:
     ex.add_argument("--surface", required=True, choices=["Hard", "Clay", "Grass", "Carpet"])
     ex.add_argument("--date", required=True, type=date.fromisoformat, help="match date, YYYY-MM-DD")
     ex.add_argument("--event-start", type=date.fromisoformat, help="tournament start date (default: --date)")
+    ex.add_argument("--state-version", choices=["v0", "v1", "v2"], help="read-only registered snapshot to use "
+                    "(default: the active state, version 0); never activates it")  # fmt: skip
     ex.add_argument("--json", action="store_true", help="print the full result as JSON")
     ex.add_argument("--prospective-config", help="config/prospective.toml by default")
     from tennis_data.ledger.cli import COMMANDS as LEDGER_COMMANDS
