@@ -1,7 +1,7 @@
 [project]
 name = "tennis-data"
 version = "0.1.0"
-description = "Reproducible, validated historical ATP singles match dataset (data foundation for leakage-free tennis prediction)."
+description = "Reproducible ATP match-winner prediction research: validated data, point-in-time Elo and serve/return features, a frozen logistic model with walk-forward evaluation, and a research dashboard."
 readme = "README.md"
 requires-python = ">=3.11"
 license = { text = "MIT for the code only (LICENSE); data and derived datasets CC BY-NC-SA 4.0 (Jeff Sackmann), see LICENSE-DATA.md" }

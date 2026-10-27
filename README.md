@@ -1,337 +1,255 @@
-# Tennis data foundation: validated ATP singles matches
+# ATP Tennis Prediction: A Reproducible Machine Learning Research System
 
-A reproducible pipeline that turns the historical ATP singles match files into one validated,
-documented, partitioned match table. It is the base for later leakage-free Elo ratings, serve/return
-features and match-winner models. Phase 1 has no models and no features. It does
-ingestion, normalization, validation, storage and reporting. Phase 2 adds a leakage-safe historical Elo engine
-(`docs/elo.md`).
+[![CI](https://github.com/vermillonn/tennis-prediction-data/actions/workflows/ci.yml/badge.svg)](https://github.com/vermillonn/tennis-prediction-data/actions/workflows/ci.yml)
+![Python 3.11+](https://img.shields.io/badge/python-3.11%2B-blue)
+![Code: MIT](https://img.shields.io/badge/code-MIT-green)
+![Data: CC BY-NC-SA 4.0](https://img.shields.io/badge/data-CC%20BY--NC--SA%204.0-lightgrey)
 
-Key properties:
+This project predicts the winners of historical ATP tour-level singles matches. It asks whether point-in-time serve
+and return statistics add information to a well-tuned surface Elo rating, and answers with a frozen, six-input
+logistic regression (**M4A**) evaluated against Elo with walk-forward refits and block-bootstrap uncertainty.
 
-- **Pinned, checksummed source.** Raw files are fetched from one fixed commit of
-  [Aneeshers/tennis-sackmann-archive](https://github.com/Aneeshers/tennis-sackmann-archive) and stored
-  byte-for-byte. A manifest records the URL, commit, retrieval time and SHA-256 of each file.
-- **Idempotent.** Re-running ingestion verifies checksums and fetches nothing new. Builds replace their
-  outputs instead of appending, and repeated builds are byte-identical.
-- **Winner-independent player order.** Player A/B is chosen from `sha256(match_id)`, never from the result.
-- **No silent loss.** Each source row ends up either in the validated table or in the quarantine table,
-  with reasons and the original raw record. `validated + quarantined = source` is enforced.
-- **No fabrication.** Missing statistics stay null. There are no match timestamps in the source, so
-  `match_date` / `match_start_time` stay null and are never derived from the tournament date.
+The research sits on a reproducible data system. It covers:
 
-## Layout
+- a validated match table built from a pinned, checksummed archive;
+- chronology-aware rating and feature engines;
+- an append-only prediction ledger;
+- a read-only audit framework;
+- an interactive research dashboard.
 
-```
-tennis/
-  config/default.toml        source, commit, years, paths, validation thresholds (tour-level, default)
-  config/all_families.toml   same plus qualifying/challenger and futures files
-  src/tennis_data/
-    ingestion/               sources.py (file selection), fetch.py (download/import), manifest.py
-    normalization/           schema.py (canonical schema), normalize.py, ordering.py (A/B), score.py
-    validation/              rules.py (row rules), duplicates.py, reference.py (players/rankings), contract.py
-    storage/                 parquet.py (partitioned writer), query.py (DuckDB views)
-    reporting/               quality.py (data-quality report), docs.py (data dictionary)
-    pipeline.py, cli.py
-  tests/                     pytest suite on small synthetic fixtures (no network)
-  docs/source_schema.md      inspected source schema, coverage and anomalies
-  docs/data_dictionary.md    canonical schema, quarantine table, rule catalogue (generated)
-  docs/elo.md                Phase 2 Elo: chronology, update maths, eligibility, outputs, limitations
-  config/elo.toml            Phase 2 Elo parameters, chronology, eligibility, tuning grid, periods
-  config/features.toml       Phase 3A feature windows, decay, shrinkage priors, opponent model
-  docs/features.md           Phase 3A methodology, chronology, estimators, limitations
-  docs/feature_dictionary.md Phase 3A feature columns (generated)
-  src/tennis_data/elo/       config, chronology, eligibility, engine, evaluation, backtest, report
-  src/tennis_data/features/  observations, estimates, snapshots, opponent model, pipeline, report, dictionary
-  config/modeling.toml       Phase 3B chronology, C grid, calibration, selection rule, experiment registry
-  docs/modeling.md           Phase 3B methodology, chronology, selection, outputs, limitations
-  src/tennis_data/modeling/  dataset, folds, preprocessing, logistic, calibration, evaluation, experiments, artifacts
-  config/prospective.toml    Phase 4A chronology policy, identity/reconciliation policy, freshness thresholds
-  docs/prospective_data.md   Phase 4A data flow, time fields, identity, reconciliation, inference, limitations
-  src/tennis_data/prospective/ providers, identity, reconciliation, backfill, state, inference, freshness, replay
-  config/ledger.toml         Phase 4B ledger paths, schema version, forecast slots, timing limits
-  src/tennis_data/ledger/    hashing, storage, events, lifecycle, writer, service, verification, checkpoint, export
-  config/evaluation.toml     Phase 4C evaluation protocol (pe-1), thresholds, publication backends (disabled)
-  docs/prospective_evaluation.md  Phase 4C evaluation, anchoring, trust levels, threat model, audit packages
-  src/tennis_data/evaluation_prospective/ snapshot, integrity, anchoring, outcomes, eligibility, metrics, verify
-  config/operations.toml     Phase 5A provider catalogue, gap window, compatibility thresholds, readiness criteria
-  docs/operational_data.md   Phase 5A source availability, conversion, identity, compatibility, readiness
-  src/tennis_data/operations/ access audit, TML conversion, compatibility, gap audit, readiness, reports
-  reports/                   data-quality report + CSV tables (committed; regenerated by the pipeline)
-  data/                      raw/, validated/, quarantine/ (git-ignored, created by the pipeline)
-```
+Everything is deterministic and tested (532 automated tests).
 
-Raw data, validated data, quarantine and reports live in separate directories. The config loader
-refuses overlapping paths.
+> **Scope.** This is retrospective research, not a live forecasting or betting service.
+> - Prospective predictions are **disabled**.
+> - The post-archive backfill is **incomplete**.
+> - No independently verified prospective performance exists yet.
 
-## Installation
+![Research dashboard: overview](docs/assets/screenshots/1-overview.png)
 
-Requires Python 3.11+ and [uv](https://docs.astral.sh/uv/).
+## Research questions
 
-```bash
-cd tennis
-uv sync            # creates .venv with polars, duckdb and pytest, pinned in uv.lock
-```
+1. Can historical serving and returning performance improve match-winner prediction beyond surface Elo?
+2. How large is the improvement under historical walk-forward evaluation?
+3. How do performance and calibration vary by surface, tournament type and player experience?
+4. What limits an assessment of tennis predictions when the historical record has no match-level timestamps?
 
-Without uv: `python -m venv .venv && . .venv/bin/activate && pip install -e . pytest`.
+## Key findings
 
-## Usage
+M4A against the surface-Elo baseline on identical matches. Lower log loss and Brier score are better. Δ = M4A − Elo.
 
-All commands accept `--config PATH` (default `config/default.toml`). Paths in the config are relative
-to the `tennis/` directory.
+| period | role | matches | log loss M4A | log loss Elo | Δ log loss (95% CI) | Brier M4A | Brier Elo | accuracy M4A | accuracy Elo |
+|---|---|---|---|---|---|---|---|---|---|
+| 2002–2009 | development (model selection) | 24,622 | 0.59512 | 0.60142 | −0.00630 [−0.00833, −0.00439] | 0.20486 | 0.20775 | 67.8% | 66.9% |
+| 2010–2026 | exploratory (seen in Phase 2) | 45,191 | 0.59861 | 0.60403 | −0.00541 [−0.00662, −0.00423] | 0.20668 | 0.20899 | 67.0% | 66.5% |
 
-```bash
-uv run tennis-data ingest     # download the selected raw files at the pinned commit + write the manifest
-uv run tennis-data verify     # re-check every raw file against its recorded SHA-256
-uv run tennis-data build      # normalize + validate + write Parquet (validated, quarantine) + DuckDB views
-uv run tennis-data report     # write reports/data_quality_report.md and reports/tables/*.csv
-uv run tennis-data run        # ingest + build + report
-uv run tennis-data docs       # regenerate docs/data_dictionary.md from the schema
-uv run tennis-data query "SELECT surface, count(*) FROM matches GROUP BY ALL ORDER BY 2 DESC"
-uv run tennis-data query --csv "SELECT * FROM quarantine" > quarantine.csv
+Intervals come from a paired bootstrap that resamples whole weekly batches: 2,000 resamples over 322 and 645 weeks.
+The Δ is computed before rounding.
 
-uv run tennis-data --config config/all_families.toml run   # all three singles families (~963k rows)
-```
+What the evidence supports:
 
-To use an existing clone instead of downloading, set `[source].mode = "local"` and
-`local_path = "/path/to/tennis-sackmann-archive"`. The clone's `HEAD` must equal the pinned commit.
+- **A consistent but small improvement.** M4A beats surface Elo in all four exploratory sub-periods.
+  - The reduction is about 0.9% of Elo's log loss in the exploratory period.
+  - Accuracy rises by about half a percentage point.
+  - Elo remains the dominant input: serve/return features without Elo are clearly worse than Elo alone (+0.033).
+- **Recency, not career averages.** In development, career-long shrunk serve/return rates do not improve on
+  Elo. The 52-week decay-weighted rates and a missing-history indicator carry the gain.
+- **A large part is a cold-start correction.** Matches where a player has fewer than 1,000 released service
+  points account for:
+  - 81% of the log-loss reduction in development;
+  - 54% of the reduction in the exploratory period.
 
-### Outputs
+  Between established players the gain is smaller: −0.00303 [−0.00375, −0.00234] in the exploratory period.
+- **Not uniform.** The gain is clearest on hard courts. On clay and at Grand Slams the interval includes zero, and
+  the Grand Slam point estimate is slightly worse than Elo (+0.00168).
 
-| path | content |
+> **How to read these numbers.** Neither period is an untouched holdout.
+> - The 2002–2009 period selected the model.
+> - The 2010–2026 period was examined while the Elo baseline was built.
+>
+> The results are careful in-sample-period evidence of an improvement over Elo, not proof of out-of-sample
+> generalisation. A pre-specified prospective protocol exists, but has not been run.
+
+Full analysis: [docs/research_summary.md](docs/research_summary.md). The detailed reports are
+[development](reports/modeling/development_report.md), [exploratory](reports/modeling/exploratory_report.md),
+[calibration](reports/modeling/calibration_report.md) and [ablations](reports/modeling/ablation_report.md). The
+model card is [reports/modeling/model_card.md](reports/modeling/model_card.md).
+
+## Research dashboard
+
+A five-section Streamlit application presents the frozen model and its evaluation from a public, archive-derived
+dataset:
+
+| section | what it shows |
 |---|---|
-| `data/raw/<owner>__<repo>/<commit>/...` | raw files, untouched |
-| `data/raw/<owner>__<repo>/<commit>.manifest.json` | provenance: URL, commit, retrieved_at, sha256, bytes per file |
-| `data/validated/matches/season=YYYY/part-0.parquet` | validated canonical table (zstd Parquet) |
-| `data/quarantine/matches.parquet` | quarantined rows + `quarantine_reasons`, `quarantine_categories`, `duplicate_of`, `raw_record` |
-| `data/tennis.duckdb` | DuckDB file with views over the Parquet files |
-| `reports/build_summary.json` | input checksums, row accounting, SHA-256 of every output file |
-| `reports/data_quality_report.md`, `reports/tables/*.csv` | data-quality report |
-| `reports/details/rank_discrepancies.parquet` | per-appearance rank comparison (git-ignored) |
+| **Overview** | the question, method, M4A inputs and coefficients, model hashes and headline metrics |
+| **Match explorer** | 69,813 recorded historical predictions with the paired Elo probability, filters and a per-match inspector |
+| **Player comparison** | point-in-time Elo and serve/return indicators for two players as of any date (no win probability) |
+| **Model evaluation** | published metrics with bootstrap intervals, reliability diagrams, subgroup differences |
+| **Data & status** | live operational gates, historical coverage, aggregate backfill counts, data freshness |
 
-### Query interface
+| | |
+|---|---|
+| ![Match explorer](docs/assets/screenshots/2-match-explorer.png) | ![Model evaluation](docs/assets/screenshots/4-model-evaluation.png) |
+| ![Player comparison](docs/assets/screenshots/3-player-comparison.png) | ![Data and status](docs/assets/screenshots/5-data-status.png) |
 
-`tennis_data.storage.query.connect(config)` returns a DuckDB connection with these views:
+The screenshots come from the real application running from a clean clone. More screenshots, including a mobile
+view, are in [docs/assets/screenshots/](docs/assets/screenshots/). The source is in
+[dashboard/](dashboard/streamlit_app.py), and the guide is [docs/dashboard.md](docs/dashboard.md). The app is
+**not deployed**: it runs locally, and is ready for Streamlit Community Cloud at the owner's discretion.
 
-- `matches`: the validated table (schema in `docs/data_dictionary.md`)
-- `quarantine`: quarantined rows
-- `player_matches`: one row per player per match, with `opponent_*` columns. This is the long format
-  later rolling features need.
-- `players`: raw `atp_players.csv`
+## Methodology
 
-```python
-from tennis_data.config import load_config
-from tennis_data.storage.query import connect
-
-con = connect(load_config())
-con.sql("""
-    SELECT season, count(*) FILTER (WHERE stats_status = 'complete') * 1.0 / count(*) AS stats_share
-    FROM matches WHERE match_status <> 'walkover' GROUP BY ALL ORDER BY season
-""").show()
+```mermaid
+flowchart LR
+    A[Pinned ATP archive] --> B[Validated canonical matches]
+    B --> C[Weekly point-in-time chronology]
+    C --> D[Global and surface Elo]
+    C --> E[Serve/return features]
+    D --> F[Frozen M4A logistic model]
+    E --> F
+    F --> G[Walk-forward historical evaluation]
+    G --> H[Research dashboard]
+    F -.-> I[Ledger and prospective audit: built, gated off]
 ```
 
-Matches can be opened without the pipeline too: `duckdb -c "SELECT * FROM 'data/validated/matches/*/*.parquet'"`.
+1. **Data foundation.** Jeff Sackmann's ATP archive, fetched at one pinned commit with SHA-256 checksums.
+   - 199,389 source rows become 199,280 validated matches and 109 quarantined rows. Every row is accounted for.
+   - Player order is derived from a hash of the match ID, never from the result.
+2. **Chronology.** The archive has tournament start dates but no match dates.
+   - Matches are grouped into weekly batches.
+   - Every prediction uses only results *released* before its batch.
+   - Multi-week events release their results when the event ends.
+3. **Elo baseline.** Global and surface-specific Elo, tuned on 1991–2009:
+   - global: K = 24;
+   - surface: K = 32, with shrinkage toward global Elo (m = 40).
+4. **Serve/return features.** 193,634 point-in-time rows, with:
+   - career rates with beta-binomial shrinkage, and 52-week decay-weighted rates;
+   - surface blends and opponent-adjusted strengths;
+   - effective sample sizes.
 
-## Phase 2: historical Elo ratings
+   An allowlist guard keeps outcome and audit columns out of model inputs.
+5. **Model.** An L2 logistic regression with no intercept, on antisymmetric A − B inputs. This makes it exactly
+   symmetric in player order.
+   - Six candidate models (among 14 registered experiments) were compared under a selection rule fixed before
+     results: the simplest model within 0.0005 of the best development log loss. That rule chose M4A over the
+     marginally better seven-input M4B.
+   - The specification was frozen before any 2010–2026 row was scored: hash `bc4e5c870c6e21b9`, configuration
+     `5e72010100065889`.
+6. **Evaluation.** Annual walk-forward refits: each season is predicted by coefficients trained only on earlier
+   released results.
+   - These historical refits are what the dashboard and the reports evaluate.
+   - The single **production fit** (trained on all labels before 2026-06-06) has no out-of-sample history.
+7. **Operational and audit infrastructure** (Phases 4–5A). Implemented and tested, but gated off:
+   - provider adapters and state reconstruction;
+   - a hash-chained SQLite prediction ledger;
+   - a read-only prospective evaluator with external timestamp anchoring;
+   - a controlled historical backfill.
+
+The architecture diagram and component map are in [docs/architecture.md](docs/architecture.md).
+
+## Technologies
+
+| area | tools |
+|---|---|
+| language and data | Python 3.11+, Polars, NumPy, Parquet (zstd), DuckDB views |
+| modelling | NumPy implementations of L2 logistic regression (damped Newton), Elo, beta-binomial shrinkage and block bootstrap. No ML framework: every estimator is explicit and unit-tested, and SciPy is used only to cross-check optimisers in tests |
+| storage and audit | SQLite (append-only, hash-chained ledger), SHA-256 content addressing, TOML configuration with configuration hashes |
+| presentation | Streamlit, Plotly |
+| engineering | uv (locked dependencies), pytest (532 tests), Ruff, GitHub Actions CI |
+
+## Quick start
+
+These commands work from a clean public clone, with no private data and no data download:
 
 ```bash
-uv run tennis-data elo-backtest                 # tune on 1991-2009, write predictions, score 2010-2026
-uv run tennis-data query "SELECT model_name, avg(predicted_probability_a) FROM elo_predictions GROUP BY ALL"
+git clone https://github.com/vermillonn/tennis-prediction-data.git
+cd tennis-prediction-data
+uv sync --group dashboard                         # Python 3.11+, dependencies pinned in uv.lock
+uv run streamlit run dashboard/streamlit_app.py   # open http://localhost:8501
+uv run pytest                                     # 532 tests, synthetic fixtures, no network
 ```
 
-This produces leakage-safe pre-match probabilities from global Elo and from surface Elo with shrinkage, using
-frozen weekly batches. The source has no match dates; see `docs/elo.md` for the chronology assumptions,
-eligibility rules, output columns and limitations. Results are in `reports/elo/evaluation_report.md`. The
-`config/elo.toml` file holds all parameters, the tuning grid and the evaluation periods.
+To install without uv: `pip install -r dashboard/requirements.txt` runs the dashboard only.
 
-## Phase 3A: historical serve/return features
+Rebuilding the research outputs from source downloads the public archive (about 200,000 matches) and takes
+minutes per phase:
 
 ```bash
-uv run tennis-data features-build               # point-in-time serve/return features + coverage report
-uv run tennis-data query "SELECT count(*), avg(a_spw_shrunk) FROM serve_return_features"
+uv run tennis-data run              # Phase 1: ingest the pinned archive, validate, report
+uv run tennis-data elo-backtest     # Phase 2: Elo tuning and evaluation
+uv run tennis-data features-build   # Phase 3A: point-in-time serve/return features
+uv run tennis-data model-backtest   # Phase 3B: development, selection, freeze, walk-forward evaluation
 ```
 
-Builds raw, windowed, decay-weighted, shrunk, surface-specific and opponent-adjusted serve/return estimates
-for both players of every Phase 2 target match. It uses only statistics released before the match's frozen
-batch. Methodology: `docs/features.md`. Columns: `docs/feature_dictionary.md`. Coverage:
-`reports/features/coverage_report.md`. No prediction model is trained in this phase.
+[docs/reproducibility.md](docs/reproducibility.md) covers:
 
-Model matrices for later phases must be built with `tennis_data.features.model_inputs.model_matrix`. It accepts
-only allowlisted pre-match columns and rejects outcomes, current-match statistics and audit fields such as
-`stats_eligible`.
-
-## Phase 3B: models on top of surface Elo
-
-```bash
-uv run tennis-data model-backtest               # develop on 2002-2009, freeze, evaluate 2010-2026 (exploratory)
-uv run tennis-data query "SELECT model_id, count(*) FROM model_selected_predictions GROUP BY ALL"
-```
-
-Symmetric L2 logistic models combine the surface-Elo logit with serve/return differences. They use walk-forward
-annual refits on released labels only, a pre-specified selection rule, and a frozen model before any 2010-2026
-row is scored. Paired weekly-block bootstrap intervals compare each model with Elo. Methodology:
-`docs/modeling.md`. Results: `reports/modeling/development_report.md`, `exploratory_report.md`,
-`calibration_report.md`, `ablation_report.md`, `model_card.md`. The 2010-2026 period is exploratory only,
-because Phase 2 already reported on it.
-
-## Phase 4A: current data, backfill and inference readiness
-
-```bash
-uv run tennis-data prospective-import export.csv --format sackmann_csv   # authorized files only
-uv run tennis-data prospective-run                                         # gap audit, backfill, replay, readiness
-```
-
-Phase 4A adds provider adapters with immutable raw snapshots, cross-source player identity reconciliation, and match
-reconciliation through the unchanged Phase 1 rules. It also adds a reproducible state backfill on the Phase 2 and 3A
-engines, and verified inference with the frozen M4A model. Methodology: `docs/prospective_data.md`. Reports:
-`reports/prospective/`. As of 2026-10-25 no current data source is accessible and the May–October 2026 gap is not
-filled. The system is therefore not ready for prospective predictions.
-
-## Phase 4B: prediction ledger
-
-```bash
-uv run tennis-data ledger-init && uv run tennis-data ledger-verify
-```
-
-Phase 4B adds an append-only, SHA-256 hash-chained SQLite event log for pre-match forecasts, with explicit
-SYNTHETIC, HISTORICAL_REPLAY and PROSPECTIVE modes. It also provides idempotent commitments, append-only corrections
-and voids, integrity verification, and checkpoint export and verification. Design: `docs/ledger.md`. Threat model:
-`docs/ledger_threat_model.md`. Results: `reports/ledger/verification_report.md`. PROSPECTIVE commitments stay
-refused while the Phase 4A status gate is DISABLED.
-
-## Phase 4C: prospective evaluation and independent audit
-
-```bash
-uv run tennis-data eval-run --write-reports        # evaluate the ledger (read-only) into an audit package
-uv run tennis-data eval-verify data/evaluation/packages/<package>   # recompute and check everything
-uv run tennis-data eval-demo --out /tmp/demo       # SYNTHETIC demonstration, labelled as such
-```
-
-Phase 4C is a read-only auditor of the ledger. It covers:
-
-- content-addressed snapshots;
-- external checkpoint anchoring (GitHub publication and RFC 3161 time stamps, both disabled until explicitly
-  configured), with trust levels computed from evidence;
-- a frozen eligibility and selection protocol;
-- outcome reconciliation with provenance;
-- paired M4A / surface-Elo metrics, calibration, subgroups and block-bootstrap uncertainty with sample-size gates;
-- coverage accounting;
-- self-contained audit packages that `eval-verify` recomputes without the SQLite ledger.
-
-Design and threat model: `docs/prospective_evaluation.md`. Reports: `reports/evaluation/`; the synthetic
-demonstration is in `reports/evaluation/synthetic_demonstration/`. While the gate is DISABLED the live report shows
-zero eligible prospective forecasts.
-
-## Phase 5A: operational data readiness
-
-```bash
-uv run tennis-data ops-run            # access audit, authorized download, Phase 4A backfill, studies, readiness
-uv run tennis-data ops-readiness      # verdict (exit code 1 while not ready)
-```
-
-Phase 5A checks whether current ATP data can be obtained and whether the frozen system can operate on it. Only
-GitHub-hosted sources are reachable from the development environment; none covers the period after the archive
-(2026-05-25). The commercial APIs need network access and credentials that the owner must provide.
-
-TML-Database records (2025 to January 2026) were imported through the unchanged Phase 4A path. They show that
-TML's serve statistics do not match the archive's closely enough to be used (exact agreement 94–98% against a 98%
-threshold). They also exposed an identity defect, now fixed: names written in another order no longer create new
-players.
-
-The readiness verdict is NOT_READY, and the gate stays closed. Details: `docs/operational_data.md` and
-`reports/operations/`.
-
-## Phase 5B: research dashboard
-
-```bash
-uv sync --group dashboard
-uv run streamlit run dashboard/streamlit_app.py
-```
-
-An interactive Streamlit presentation of the frozen M4A model and its historical evaluation: overview, match
-explorer (69,813 recorded historical predictions), player comparison (point-in-time ratings and serve/return
-indicators, no win probability), model evaluation (published metrics, calibration, subgroups) and data/operational
-status. Retrospective research only: prospective predictions stay disabled. It runs from a clean clone with the
-committed public dataset `dashboard/data/` (derived from the archive, CC BY-NC-SA 4.0; see its data card). Guide:
-`docs/dashboard.md`.
-
-## Validation model
-
-Every check is a registered rule with a code, a severity and a category (`src/tennis_data/validation/rules.py`;
-the full catalogue is in the data dictionary and the report):
-
-- `error`: the row goes to quarantine. Examples: missing or unparseable identifiers, placeholder or identical
-  players, invalid surface/level/round/best_of, impossible serve statistics (negative counts, first serves in > serve
-  points, second-serve won + double faults > second-serve points, breaks > service games, too few points for the
-  service games played), duplicate copies, conflicting versions of a match.
-- `warning`: the row is kept and the code goes into `quality_flags`. Examples: missing surface, unknown score,
-  score inconsistent with `best_of`, partial stats, stats on a walkover, implausible minutes/age/height, name
-  mismatch with the player master.
-- **Legitimately missing statistics are neither.** They are null with `stats_status = 'none'`.
-
-Retirements, defaults, walkovers and abandoned or unfinished matches are kept and labelled by
-`match_status`. Walkovers are not played matches; exclude them from anything that treats a row as a
-contest.
-
-Quarantine is not deletion. A row quarantined only for `stats` reasons still has a trustworthy result
-and can be re-admitted for result-only uses, for example:
-`SELECT * FROM quarantine WHERE quarantine_categories = ['stats']`.
-
-## Tests
-
-```bash
-uv run pytest
-```
-
-The suite uses small synthetic archives written to a temp directory, so it needs no network. It covers
-deterministic and winner-independent player ordering, winner identification, duplicate and conflict
-detection, rejection of each impossible-statistic rule, legitimate missing statistics, match-status
-parsing, idempotent and tamper-evident ingestion, actionable errors (missing year, missing column, wrong
-commit), the stable output schema, the up-to-date data dictionary, byte-reproducible builds and reports,
-and the CLI.
-
-## Reproducing the committed report
-
-```bash
-cd tennis
-uv sync
-uv run pytest
-uv run tennis-data run
-uv run tennis-data verify
-git diff --stat reports/      # no changes expected: outputs are deterministic
-```
-
-`reports/build_summary.json` holds the SHA-256 of every input and output file, so two machines can compare
-builds directly. Parquet bytes depend on the Polars version, which `uv.lock` pins.
-
-## Licensing and attribution
-
-- **Data:** compiled by **Jeff Sackmann** (<https://github.com/JeffSackmann/tennis_atp>) and redistributed by
-  the archive under **CC BY-NC-SA 4.0**. You must credit Jeff Sackmann and link the original repositories, use the
-  data non-commercially only, and distribute derivatives (including the Parquet outputs and the report tables)
-  under the same license. This project does not redistribute raw data: `data/` is git-ignored and filled locally
-  from the source. The committed report contains aggregate counts plus the short list of duplicate/conflicting
-  rows, all derived from the data and shared under the same license. The research dashboard's dataset
-  (`dashboard/data/`: historical model predictions and point-in-time player indicators) is derived from the same
-  archive and shared under CC BY-NC-SA 4.0 with a data card; it contains nothing from other licensed sources.
-- **Code:** the original software, tests and documentation are released under the **MIT License** (`LICENSE`).
-  The MIT license covers the code only: it grants no rights over the data, which stays under CC BY-NC-SA 4.0
-  (non-commercial, share-alike; see `LICENSE-DATA.md`).
+- what a public clone can verify;
+- what a full rebuild requires;
+- dataset-hash checks;
+- the per-phase commands, including the operational phases.
 
 ## Limitations
 
-- **No match dates or times.** Only the tournament start date exists. Matches in the same round of the same event
-  have no relative order, and `round_order` is an ordinal, not a clock. Point-in-time features must work at
-  `(tournament_date, tournament_id, round_order)` granularity.
-- **Rank timing.** The match files' ranks are "as of" `tourney_date`, but about 9,800 player appearances (tour) match
-  the list published 1-2 days *after* `tourney_date` (events recorded as starting on a weekend), and about 640
-  match lists 6-14 days later. Strictly point-in-time features should take ranks from the rankings files with
-  `ranking_date <= tournament_date` (see the source-discrepancy section of the report).
-- **Biographical fields are not time-stamped.** Height and hand are current values from the source.
-- **`best_of` is unreliable in places.** 1970s Slam early rounds, NextGen Finals and some Davis Cup rubbers carry a
-  `best_of` that contradicts the score. They are flagged, not corrected.
-- **Coverage.** Serve statistics start in 1991 (tour level), are thin for Davis Cup (about 9% of played matches)
-  and almost absent for futures (about 5%). Rankings are intermittent before 1985 and missing for 1982.
-- **Duplicate detection is content-based.** Two identical round-robin results between the same players in one event
-  (Denver 1971) cannot be told apart from a double entry and are treated as duplicates.
-- **Placeholder identity.** Only `199999` is configured as a shared placeholder. Other players the master lists as
-  "Unknown" have their own IDs and are kept, with a warning.
+- **Retrospective, non-pristine evaluation.**
+  - The development period selected the model.
+  - The exploratory period was seen while building the Elo baseline.
+  - No independent holdout exists, and no prospective performance has been measured.
+- **No match-level timestamps.** The archive records tournament start dates only.
+  - Chronology is weekly, and the dates shown are event start dates.
+  - Within-event order is approximate.
+- **Imperfect information-availability semantics.** A batch's results enter the state when its release batch
+  closes. Late-round results can therefore be treated as available slightly earlier than a strict real-time
+  replay would allow (see [docs/operational_data.md](docs/operational_data.md)).
+- **No post-hoc calibration.** M4A uses `raw` probabilities: temperature scaling was within the selection
+  tolerance and the simpler method won.
+  - Calibration is reasonable: exploratory ECE is 0.0064, against 0.0130 for Elo.
+  - Development ECE is 0.0116, against 0.0066 for Elo.
+- **Uneven gains.** Grand Slams (best-of-five) are slightly worse than Elo, and clay is inconclusive. The model has
+  no format-specific term.
+- **Feature coverage.** Serve statistics start in 1991 and are missing for some matches and events.
+  - An owner-supplied 2025–2026 export failed the statistical compatibility check, so it adds results only.
+- **The backfill does not establish live readiness.**
+  - The backfill is INCOMPLETE and prospective predictions are DISABLED.
+  - Historical state version 0 is active. The backfilled versions 1 and 2 are local and inactive.
+  - External checkpoint publication is disabled.
+- **Bootstrap intervals** resample weeks and ignore dependence through players shared across weeks, so they may be
+  too narrow.
+
+## Repository guide
+
+| path | content |
+|---|---|
+| `src/tennis_data/` | the package: `ingestion`, `normalization`, `validation`, `storage`, `elo`, `features`, `modeling`, `prospective`, `ledger`, `evaluation_prospective`, `operations`, `dashboard` |
+| `config/` | one TOML file per phase; every run records a configuration hash |
+| `reports/` | committed, deterministic reports and tables (aggregate statistics only) |
+| `dashboard/` | Streamlit app and its public dataset `dashboard/data/` (with a data card and SHA-256 manifest) |
+| `docs/` | methodology per phase, [research summary](docs/research_summary.md), [reproducibility](docs/reproducibility.md), [architecture](docs/architecture.md), [portfolio summary](docs/portfolio_summary.md) |
+| `tests/` | pytest suite on synthetic fixtures |
+
+Methodology by phase:
+
+- [data pipeline and schema](docs/source_schema.md), and the [data dictionary](docs/data_dictionary.md)
+- [Elo](docs/elo.md)
+- [features](docs/features.md)
+- [modelling](docs/modeling.md)
+- [current data and inference](docs/prospective_data.md)
+- [ledger](docs/ledger.md)
+- [prospective evaluation](docs/prospective_evaluation.md)
+- [operational data](docs/operational_data.md)
+- [dashboard](docs/dashboard.md)
+
+## Licensing and attribution
+
+- **Original software** (code, tests, documentation) is released under the [MIT License](LICENSE). It covers the
+  software only, and grants no rights over the data.
+- **Data** is compiled by **Jeff Sackmann** ([tennis_atp](https://github.com/JeffSackmann/tennis_atp)) and
+  licensed under **CC BY-NC-SA 4.0**.
+  - The license covers everything derived from the data: the committed reports and the dashboard dataset
+    `dashboard/data/`.
+  - Use is **non-commercial only**, adaptations must be shared alike, and Jeff Sackmann must be credited.
+  - See [LICENSE-DATA.md](LICENSE-DATA.md) and the [dashboard data card](dashboard/data/README.md).
+- **Owner-supplied sources** (the TennisMyLife exports used in Phase 5A) are not redistributed. Neither is
+  anything derived from them at record level, nor any identity approval or local snapshot. Public reports about
+  them contain aggregate counts only.
+
+Nothing in this repository is betting advice.
