@@ -1,0 +1,100 @@
+{
+ "active_state_snapshot_id": "3253426224f7ebc0",
+ "archive_commit": "83733587353df8a41f2fd4f516147d5aa83f5a8d",
+ "backfill_runs": [
+  {
+   "accepted_matches": 1093,
+   "elo_updates": 1063,
+   "quarantined_matches": 159,
+   "service_statistics_rows": 0,
+   "staged_freshness": {
+    "last_eligible_result": "ok",
+    "last_point_statistics": "fail",
+    "missing_backfill_weeks": "ok",
+    "opponent_fit_age_weeks": "ok",
+    "player_recent_history": "warning",
+    "source_age_days": "ok",
+    "unresolved_identities": "ok"
+   },
+   "staged_readiness_blockers": [
+    "feature freshness fails for a match after the prospective start: last_point_statistics",
+    "no verified live provider: schedules for upcoming matches cannot be ingested automatically",
+    "status gate: backfill INCOMPLETE, prospective predictions DISABLED (config/prospective.toml [status])"
+   ],
+   "unresolved_identities": 36,
+   "verification_passed": true,
+   "version": 1
+  },
+  {
+   "accepted_matches": 1210,
+   "elo_updates": 1176,
+   "quarantined_matches": 42,
+   "service_statistics_rows": 0,
+   "staged_freshness": {
+    "last_eligible_result": "ok",
+    "last_point_statistics": "fail",
+    "missing_backfill_weeks": "ok",
+    "opponent_fit_age_weeks": "ok",
+    "player_recent_history": "warning",
+    "source_age_days": "ok",
+    "unresolved_identities": "ok"
+   },
+   "staged_readiness_blockers": [
+    "feature freshness fails for a match after the prospective start: last_point_statistics",
+    "no verified live provider: schedules for upcoming matches cannot be ingested automatically",
+    "status gate: backfill INCOMPLETE, prospective predictions DISABLED (config/prospective.toml [status])"
+   ],
+   "unresolved_identities": 21,
+   "verification_passed": true,
+   "version": 2
+  }
+ ],
+ "freshness_probe": {
+  "last_eligible_result": {
+   "status": "fail",
+   "value": "2026-06-06"
+  },
+  "last_point_statistics": {
+   "status": "fail",
+   "value": "2026-05-23"
+  },
+  "missing_backfill_weeks": {
+   "status": "fail",
+   "value": 21
+  },
+  "opponent_fit_age_weeks": {
+   "status": "ok",
+   "value": 0
+  },
+  "player_recent_history": {
+   "status": "ok",
+   "value": null
+  },
+  "source_age_days": {
+   "status": "warning",
+   "value": null
+  },
+  "unresolved_identities": {
+   "status": "ok",
+   "value": 0
+  }
+ },
+ "generated_from": "local Phase 4A manifest, snapshot registry and Phase 5A run records (counts)",
+ "snapshots": [
+  {
+   "active": true,
+   "state_snapshot_id": "3253426224f7ebc0",
+   "version": 0
+  },
+  {
+   "active": false,
+   "state_snapshot_id": "9c9d537c9c855dbe",
+   "version": 1
+  },
+  {
+   "active": false,
+   "state_snapshot_id": "8d898b4c4d0bdab9",
+   "version": 2
+  }
+ ]
+}

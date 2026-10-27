@@ -240,6 +240,20 @@ players.
 The readiness verdict is NOT_READY, and the gate stays closed. Details: `docs/operational_data.md` and
 `reports/operations/`.
 
+## Phase 5B: research dashboard
+
+```bash
+uv sync --group dashboard
+uv run streamlit run dashboard/streamlit_app.py
+```
+
+An interactive Streamlit presentation of the frozen M4A model and its historical evaluation: overview, match
+explorer (69,813 recorded historical predictions), player comparison (point-in-time ratings and serve/return
+indicators, no win probability), model evaluation (published metrics, calibration, subgroups) and data/operational
+status. Retrospective research only: prospective predictions stay disabled. It runs from a clean clone with the
+committed public dataset `dashboard/data/` (derived from the archive, CC BY-NC-SA 4.0; see its data card). Guide:
+`docs/dashboard.md`.
+
 ## Validation model
 
 Every check is a registered rule with a code, a severity and a category (`src/tennis_data/validation/rules.py`;
@@ -296,9 +310,12 @@ builds directly. Parquet bytes depend on the Polars version, which `uv.lock` pin
   data non-commercially only, and distribute derivatives (including the Parquet outputs and the report tables)
   under the same license. This project does not redistribute raw data: `data/` is git-ignored and filled locally
   from the source. The committed report contains aggregate counts plus the short list of duplicate/conflicting
-  rows, all derived from the data and shared under the same license.
-- **Code:** written for this project, separate from the data license. A code license has not been chosen yet;
-  the repository owner should add one.
+  rows, all derived from the data and shared under the same license. The research dashboard's dataset
+  (`dashboard/data/`: historical model predictions and point-in-time player indicators) is derived from the same
+  archive and shared under CC BY-NC-SA 4.0 with a data card; it contains nothing from other licensed sources.
+- **Code:** the original software, tests and documentation are released under the **MIT License** (`LICENSE`).
+  The MIT license covers the code only: it grants no rights over the data, which stays under CC BY-NC-SA 4.0
+  (non-commercial, share-alike; see `LICENSE-DATA.md`).
 
 ## Limitations
 

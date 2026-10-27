@@ -4,7 +4,7 @@ version = "0.1.0"
 description = "Reproducible, validated historical ATP singles match dataset (data foundation for leakage-free tennis prediction)."
 readme = "README.md"
 requires-python = ">=3.11"
-license = { text = "Code: MIT. Data: CC BY-NC-SA 4.0 (Jeff Sackmann), see README." }
+license = { text = "MIT for the code only (LICENSE); data and derived datasets CC BY-NC-SA 4.0 (Jeff Sackmann), see LICENSE-DATA.md" }
 dependencies = [
     "polars>=1.20",
     "duckdb>=1.1",
@@ -22,6 +22,10 @@ build-backend = "hatchling.build"
 packages = ["src/tennis_data"]
 
 [dependency-groups]
+dashboard = [
+    "plotly>=5.24",
+    "streamlit>=1.40",
+]
 dev = [
     "pytest>=8",
     "scipy>=1.17.1",

@@ -34,7 +34,7 @@ jobs:
           cache-dependency-glob: uv.lock
 
       - name: Install dependencies from uv.lock
-        run: uv sync --locked
+        run: uv sync --locked --group dashboard
 
       - name: Run tests
         # The suite uses synthetic fixtures only: no network access or source data needed.

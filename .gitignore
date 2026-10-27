@@ -2,6 +2,8 @@
 __pycache__/
 .pytest_cache/
 data/
+# The public dashboard dataset (CC BY-NC-SA 4.0, archive-derived; see dashboard/data/README.md) is tracked.
+!dashboard/data/
 *.duckdb
 *.duckdb.wal
 reports/**/details/

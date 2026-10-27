@@ -1,0 +1,62 @@
+{
+ "built_at": "2026-10-27T15:09:34+00:00",
+ "built_from_date": "2026-10-27",
+ "coverage": {
+  "predictions": [
+   "2002-01-07",
+   "2026-05-25"
+  ],
+  "snapshots": [
+   "1991-01-07",
+   "2026-05-25"
+  ]
+ },
+ "elo_week_start": "saturday",
+ "files": {
+  "players.parquet": {
+   "rows": 3689,
+   "sha256": "2d84dbc8df83fc7508757bf949f0d9cc014d62e25a463ea8cee57e3d57a82d8a"
+  },
+  "predictions.parquet": {
+   "rows": 69813,
+   "sha256": "2b8e54799e9e0ffa807dee118e793f8f731d55eaa6c976ac96567ceaf31c0804"
+  },
+  "snapshots.parquet": {
+   "rows": 218054,
+   "sha256": "63ddaf57c70ec986a43f8a76113e34de147547254839fbbf9975aafd7be2aebf"
+  },
+  "status.json": {
+   "rows": null,
+   "sha256": "83d55faaca51ed54e0e81ae2f9b8e7af235fffbb7e3a1d16c48cb682ff135cd6"
+  }
+ },
+ "format": "dashboard-data-1",
+ "inputs": {
+  "elo/predictions/model_name=surface_elo/part-0.parquet": "68d4c1c558123752e97123b2135f62d372058cfbf47cb9f59091df87863e86b7",
+  "features/serve_return": {
+   "files": 59,
+   "sha256": "f64e747c752807ee537ee7c930e47e4ed430429a9d3d29532ab6ff5d5818ed2a"
+  },
+  "modeling/predictions/selected.parquet": "1291c061ce5399a3c81b67a5a677354b19c847e7a5a37c4a7c2d8dbe11fa140a",
+  "validated/matches": {
+   "files": 59,
+   "sha256": "0d0a76ae215bcdf2f47be41e6374e571a445be639d0e47fac8c98e9941bde0ab"
+  }
+ },
+ "licence": "CC BY-NC-SA 4.0. Derived from Jeff Sackmann's ATP data (https://github.com/JeffSackmann/tennis_atp) through this repository's pipeline; changes: validation, Elo ratings, serve/return features and model predictions computed by the project. Non-commercial use only; share alike.",
+ "model": {
+  "configuration_hash": "5e72010100065889",
+  "frozen_hash": "bc4e5c870c6e21b9",
+  "historical_predictions": "walk-forward annual refits of the frozen specification (model id M4A+raw); the production fit has no out-of-sample history",
+  "id": "M4A+raw",
+  "version": "m3b-1+engine1"
+ },
+ "snapshot_start_season": 1991,
+ "source": {
+  "archive_commits": [
+   "83733587353df8a41f2fd4f516147d5aa83f5a8d"
+  ],
+  "phase": "Phase 1-3B outputs (archive only)"
+ },
+ "tests_collected_at_build": 511
+}
