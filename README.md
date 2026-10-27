@@ -116,9 +116,13 @@ flowchart LR
    - 199,389 source rows become 199,280 validated matches and 109 quarantined rows. Every row is accounted for.
    - Player order is derived from a hash of the match ID, never from the result.
 2. **Chronology.** The archive has tournament start dates but no match dates.
-   - Matches are grouped into weekly batches.
-   - Every prediction uses only results *released* before its batch.
-   - Multi-week events release their results when the event ends.
+   - The model uses deterministic, frozen, batch-level information rules. Matches are grouped into weekly
+     batches, and each prediction uses the state frozen at the start of its batch.
+   - A result enters the state when its nominal release batch closes: one week for most events, two for Grand Slams,
+     96+-draw Masters and the Olympics. Under this chronology, no feature includes its own target match.
+   - This mitigates temporal leakage but does **not** prove match-level information availability. Some events
+     overrun their nominal release batch, and the stronger prospective availability safeguard
+     (`state_availability_v1`) remains disabled. See **Limitations**.
 3. **Elo baseline.** Global and surface-specific Elo, tuned on 1991–2009:
    - global: K = 24;
    - surface: K = 32, with shrinkage toward global Elo (m = 40).
@@ -197,9 +201,17 @@ uv run tennis-data model-backtest   # Phase 3B: development, selection, freeze, 
 - **No match-level timestamps.** The archive records tournament start dates only.
   - Chronology is weekly, and the dates shown are event start dates.
   - Within-event order is approximate.
-- **Imperfect information-availability semantics.** A batch's results enter the state when its release batch
-  closes. Late-round results can therefore be treated as available slightly earlier than a strict real-time
-  replay would allow (see [docs/operational_data.md](docs/operational_data.md)).
+- **Batch-level, not match-level, information availability.** Results enter the state when their nominal release
+  batch closes.
+  - The Phase 5A chronology audit found events whose last matches were played on or after the day their results
+    enter the state ([audit](reports/operations/backfill_authorization_owner-2026-10-26.md)). Examples are
+    two-week events finishing a few days after release, and events that start mid-week or run longer than their
+    nominal weeks.
+  - For such events, a late-round result can be treated as available before it was actually known.
+  - The frozen chronology is deterministic, and it excludes each target match from its own features. It does not
+    prove that every result was known before every prediction.
+  - The stronger safeguard `state_availability_v1` was proposed for prospective use only, and remains disabled.
+    Historical results were not recomputed under it.
 - **No post-hoc calibration.** M4A uses `raw` probabilities: temperature scaling was within the selection
   tolerance and the simpler method won.
   - Calibration is reasonable: exploratory ECE is 0.0064, against 0.0130 for Elo.

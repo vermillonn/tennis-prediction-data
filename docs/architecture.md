@@ -71,9 +71,13 @@ use. Orange boxes are the public presentation layer.
 
 ## Design principles
 
-- **Point-in-time by construction.** Each component reads state frozen at the start of a weekly batch. Results enter
-  the state only when their release batch closes. Model matrices pass an allowlist that rejects outcome and audit
-  columns.
+- **Deterministic batch-level chronology.**
+  - Each component reads state frozen at the start of a weekly batch.
+  - Results enter the state only when their nominal release batch closes, so no feature includes its own target
+    match.
+  - Model matrices pass an allowlist that rejects outcome and audit columns.
+  - This mitigates temporal leakage, but it is not proof of match-level availability: some events overrun their
+    release batch (Phase 5A audit). The prospective safeguard `state_availability_v1` stays disabled.
 - **Determinism and provenance.** Inputs and outputs carry SHA-256 hashes, and configurations carry configuration
   hashes. Rebuilds are byte-identical, and the frozen model is verified by hash before use.
 - **Gates live in configuration, not code paths.**

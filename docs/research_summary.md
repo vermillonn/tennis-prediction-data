@@ -20,7 +20,7 @@ strength. Point-level serve and return statistics measure *how* matches were won
 about form, about player style, or about players whose rating is still unreliable. The research tests whether such
 information improves pre-match probabilities. It insists on two things:
 
-- **strict point-in-time construction**: no feature may use a result that was not yet known;
+- **explicit point-in-time construction**: deterministic, batch-level rules decide which results a feature may use;
 - **an honest account of how much independent evidence the evaluation provides.**
 
 ## 2. Research questions
@@ -48,24 +48,30 @@ information improves pre-match probabilities. It insists on two things:
 
 ## 4. Chronological information constraints
 
-The archive records each event's start date, but no match dates or times. The project therefore defines
-information availability explicitly:
+The archive records each event's start date, but no reliable match dates or times. The project therefore uses
+deterministic, frozen, **batch-level** information rules:
 
 - Matches are grouped into **weekly batches** (Saturday to Friday) by event start.
 - Every prediction in a batch uses the state frozen at the batch start.
-- A result enters the state only when its **release batch** closes:
+- A result enters the state only when its nominal **release batch** closes:
   - one week for ordinary events;
   - two weeks for Grand Slams, 96+-draw Masters and the Olympics.
 - The tournament start date is never treated as evidence that a result was known.
 - A leakage audit recomputed the released service history of 300 random rows from the Phase 1 table and the
   eligibility table alone. It matched exactly, and the current match was included 0 times.
 
-The approximation has known costs:
+Under these rules, no historical feature includes its own target match. This mitigates temporal leakage. It does
+**not** prove that every result was actually known before every prediction, and the rules have known costs:
 
-- ratings can be up to one or two weeks staler than a match-by-match replay would allow;
-- within-event order is a convention;
-- late-round weekend results can enter the state at the close of their release batch slightly before a strict
-  real-time replay would allow (documented in the Phase 5A chronology audit).
+- **Ratings can be staler** than a match-by-match replay would allow, by up to one or two weeks.
+- **Within-event order is a convention.**
+- **Some events overrun their nominal release batch.** The Phase 5A chronology audit
+  ([report](../reports/operations/backfill_authorization_owner-2026-10-26.md)) found events whose last matches were
+  played on or after the day their results enter the state. These include two-week events finishing a few days
+  after release, events starting mid-week, and events longer than their nominal weeks. For such events a late-round
+  result can be treated as available before it was known. The archive's event start dates cannot reveal these cases.
+- **The stronger safeguard is disabled.** The proposed `state_availability_v1` would restrict prospective inference
+  only. It remains disabled, and the historical results were not recomputed under it.
 
 ## 5. Elo baseline
 
@@ -90,7 +96,7 @@ comparisons, and it was not refitted or retuned in Phase 3B.
 
 ## 6. Point-in-time serve and return features
 
-For each player and match, features are computed from released statistics only:
+For each player and match, features are computed from released statistics only, under the batch rules of §4:
 
 - **Service and return points won**, point-weighted: total won divided by total played, never an average of match
   percentages.

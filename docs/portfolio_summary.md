@@ -17,8 +17,9 @@ well-tuned surface Elo rating. It is built as a reproducible research system:
 
 - **Data.** About 200,000 ATP matches from a pinned, checksummed public archive are validated record by record.
   Nothing is silently dropped.
-- **Chronology.** Because the archive has no match dates, the project defines a weekly release chronology under
-  which every rating and feature uses only results already known.
+- **Chronology.** Because the archive has no match dates, the project uses deterministic weekly release rules.
+  Under these rules, no rating or feature includes its own target match. They mitigate temporal leakage, but cannot
+  prove match-level information availability.
 - **Model and evaluation.**
   - Six candidate models (among 14 registered experiments) were compared under a selection rule fixed in advance.
   - The chosen model (M4A) was frozen by hash before later seasons were scored.
@@ -49,7 +50,7 @@ designed, specified and validated.
 - **Data engineering and quality.** Built a validated, checksummed data pipeline in Python (Polars, DuckDB,
   Parquet).
   - It accounts for every source row: 199,280 validated, 109 quarantined with reasons.
-  - It enforces leakage-safe weekly chronology.
+  - It applies deterministic, batch-level chronology rules that exclude each target match from its own features.
   - It is covered by 532 automated tests in GitHub Actions continuous integration.
 - **Communication and governance.** Delivered a five-section Streamlit and Plotly research dashboard that
   reproduces the published metrics exactly. Also implemented:
@@ -75,11 +76,16 @@ designed, specified and validated.
 
 **How was chronological leakage handled, and what remains?**
 - Matches are grouped into weekly batches, and each prediction uses state frozen at the batch start.
-- Results become visible only after their event's release batch closes.
+- Results become visible only after their event's nominal release batch closes. These are deterministic,
+  batch-level rules.
 - A model-input allowlist blocks outcome columns, and an audit recomputed features from raw data with zero
   differences.
-- **What remains:** the source has no match dates, so ordering within an event is approximate, and some late-round
-  results can enter the state slightly early. These issues are documented, not hidden.
+- **What remains:** the rules mitigate leakage but do not prove that every result was known in time.
+  - The source has no reliable match timestamps, so ordering within an event is approximate.
+  - The Phase 5A audit found events that overrun their nominal release batch, so some late-round results enter the
+    state before they were played.
+  - The stronger prospective availability safeguard (`state_availability_v1`) remains disabled.
+  - These issues are documented, not hidden.
 
 **Why logistic regression?**
 - The question is whether a few interpretable inputs add information. A regularised logistic regression answers
